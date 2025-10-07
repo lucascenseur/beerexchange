@@ -72,8 +72,19 @@ class PriceEngine {
           continue;
         }
         
-        // Vérifier si ce produit est du même type que celui vendu
-        const isSameProductType = product.name === soldProduct?.name;
+        // Vérifier si ce produit est du même type que celui vendu (même nom de base)
+        const getBaseProductName = (name) => {
+          // Extraire le nom de base en supprimant les tailles et formats
+          return name
+            .replace(/\s*\(?\d+cl\)?/gi, '') // Supprimer 25cl, 50cl, etc.
+            .replace(/\s*\(?(verre|bouteille|canette)\)?/gi, '') // Supprimer verre, bouteille, canette
+            .replace(/\s*\(?\d+ml\)?/gi, '') // Supprimer 250ml, 500ml, etc.
+            .trim();
+        };
+        
+        const soldProductBaseName = getBaseProductName(soldProduct?.name || '');
+        const productBaseName = getBaseProductName(product.name);
+        const isSameProductType = productBaseName === soldProductBaseName && productBaseName !== '';
         
         const newPrice = this.calculateNewPriceAfterSale(product, marketTrend, soldProductId, quantity, isSameProductType);
         
