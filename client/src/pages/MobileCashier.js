@@ -37,16 +37,13 @@ const MobileCashier = () => {
       const response = await axios.get('/api/products');
       console.log('📦 Réponse API produits:', response.data);
       
-      // Vérifier la structure de la réponse
-      let productsData = response.data;
-      if (response.data.products) {
-        productsData = response.data.products;
-      }
+      // La route /api/products retourne directement un tableau de produits
+      const productsData = response.data;
       
       console.log('📦 Données produits:', productsData);
       
       const activeProducts = productsData.filter(product => 
-        product && product.is_active && product.currentPrice > 0
+        product && product.isActive && product.currentPrice > 0
       );
       
       console.log('📦 Produits actifs:', activeProducts);
