@@ -57,6 +57,12 @@ class PriceEngine {
       console.log(`🔄 Mise à jour des prix après vente de ${quantity}x ${soldProduct?.name || 'produit inconnu'}`);
 
       for (const product of products) {
+        // Exclure l'écocup des mises à jour de prix (prix fixe)
+        if (product.name && product.name.toLowerCase().includes('écocup')) {
+          console.log(`🔒 Prix fixe maintenu pour: ${product.name}`);
+          continue;
+        }
+        
         const newPrice = this.calculateNewPriceAfterSale(product, marketTrend, soldProductId, quantity);
         
         if (newPrice !== product.currentPrice) {
@@ -143,6 +149,12 @@ class PriceEngine {
   calculateNewPriceAfterSale(product, marketTrend, soldProductId, quantity) {
     const currentPrice = parseFloat(product.currentPrice);
     const basePrice = parseFloat(product.basePrice);
+    
+    // L'écocup garde toujours son prix de base (prix fixe)
+    if (product.name && product.name.toLowerCase().includes('écocup')) {
+      console.log(`🔒 Prix fixe maintenu pour: ${product.name} (${basePrice}€)`);
+      return basePrice;
+    }
     
     let newPrice = currentPrice;
     
