@@ -24,7 +24,7 @@ const PublicDisplayCompact = () => {
       const totalProducts = response.data.products.length;
       const totalSales = response.data.products.reduce((sum, product) => sum + (product.salesCount || 0), 0);
       const averagePrice = totalProducts > 0 
-        ? (response.data.products.reduce((sum, product) => sum + product.currentPrice, 0) / totalProducts).toFixed(2)
+        ? (response.data.products.reduce((sum, product) => sum + (product.currentPrice || 0), 0) / totalProducts).toFixed(2)
         : 0;
       
       setStats({ totalProducts, totalSales, averagePrice });
@@ -68,10 +68,13 @@ const PublicDisplayCompact = () => {
 
   // Grouper les produits par catégorie
   const productsByCategory = products.reduce((acc, product) => {
-    if (!acc[product.category]) {
-      acc[product.category] = [];
+    // Vérifier que le produit a les propriétés nécessaires
+    if (product && product.category && product.name) {
+      if (!acc[product.category]) {
+        acc[product.category] = [];
+      }
+      acc[product.category].push(product);
     }
-    acc[product.category].push(product);
     return acc;
   }, {});
 
@@ -199,10 +202,10 @@ const PublicDisplayCompact = () => {
                       
                       <div className="flex items-center justify-between">
                         <div className="text-base font-bold text-beer-gold">
-                          {product.currentPrice.toFixed(2)}€
+                          {(product.currentPrice || 0).toFixed(2)}€
                         </div>
                         <div className="text-white/60 text-xs">
-                          Stock: {product.stock}
+                          Stock: {product.stock || 0}
                         </div>
                       </div>
                     </motion.div>

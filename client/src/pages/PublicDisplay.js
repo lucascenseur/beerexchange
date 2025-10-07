@@ -25,9 +25,9 @@ const PublicDisplay = () => {
       setLoading(false);
       
       // Calculer les statistiques
-      const totalSales = response.data.products.reduce((sum, product) => sum + product.salesCount, 0);
+      const totalSales = response.data.products.reduce((sum, product) => sum + (product.salesCount || 0), 0);
       const averagePrice = response.data.products.length > 0 
-        ? response.data.products.reduce((sum, product) => sum + product.currentPrice, 0) / response.data.products.length
+        ? response.data.products.reduce((sum, product) => sum + (product.currentPrice || 0), 0) / response.data.products.length
         : 0;
       
       setStats({
