@@ -1,5 +1,5 @@
 const express = require('express');
-const sumupService = require('../services/sumupService');
+const sumupService = require('../services/sumupServiceSimple');
 const SumUpToken = require('../models/SumUpToken');
 const syncService = require('../services/syncService');
 const router = express.Router();

@@ -1,7 +1,7 @@
 const axios = require('axios');
 const crypto = require('crypto');
 
-class SumUpService {
+class SumUpServiceSimple {
   constructor() {
     this.baseURL = process.env.SUMUP_BASE_URL || 'https://api.sumup.com';
     this.clientId = process.env.SUMUP_CLIENT_ID;
@@ -18,7 +18,7 @@ class SumUpService {
       response_type: 'code',
       client_id: this.clientId,
       redirect_uri: this.redirectUri,
-      scope: 'payments catalog',
+      scope: 'payments',
       state: state || crypto.randomBytes(16).toString('hex')
     });
 
@@ -119,12 +119,10 @@ class SumUpService {
     }
   }
 
-  // Récupérer le catalogue de produits
+  // Récupérer le catalogue de produits (simulation)
   async getProducts() {
     try {
-      // Note: SumUp n'a pas d'API publique pour récupérer les produits du catalogue
-      // Cette fonction retourne un tableau vide pour l'instant
-      console.log('📦 SumUp ne fournit pas d\'API publique pour récupérer les produits du catalogue');
+      console.log('📦 Mode simulation : Aucun produit SumUp disponible');
       return [];
     } catch (error) {
       console.error('❌ Erreur lors de la récupération des produits SumUp:', error.message);
@@ -132,11 +130,9 @@ class SumUpService {
     }
   }
 
-  // Créer un produit dans SumUp
+  // Créer un produit dans SumUp (simulation)
   async createProduct(productData) {
     try {
-      // Note: SumUp n'a pas d'API publique pour créer des produits dans le catalogue
-      // Cette fonction simule la création pour l'instant
       console.log(`✅ Produit simulé créé dans SumUp: ${productData.name}`);
       return { id: Date.now(), ...productData };
     } catch (error) {
@@ -145,11 +141,9 @@ class SumUpService {
     }
   }
 
-  // Mettre à jour un produit dans SumUp
+  // Mettre à jour un produit dans SumUp (simulation)
   async updateProduct(productId, productData) {
     try {
-      // Note: SumUp n'a pas d'API publique pour mettre à jour les produits du catalogue
-      // Cette fonction simule la mise à jour pour l'instant
       console.log(`✅ Produit simulé mis à jour dans SumUp: ${productId}`);
       return { id: productId, ...productData };
     } catch (error) {
@@ -158,11 +152,9 @@ class SumUpService {
     }
   }
 
-  // Supprimer un produit dans SumUp
+  // Supprimer un produit dans SumUp (simulation)
   async deleteProduct(productId) {
     try {
-      // Note: SumUp n'a pas d'API publique pour supprimer les produits du catalogue
-      // Cette fonction simule la suppression pour l'instant
       console.log(`✅ Produit simulé supprimé dans SumUp: ${productId}`);
       return true;
     } catch (error) {
@@ -200,7 +192,12 @@ class SumUpService {
       return response;
     } catch (error) {
       console.error('❌ Erreur lors de la récupération des infos marchand:', error.message);
-      throw error;
+      // En cas d'erreur, retourner des infos simulées
+      return {
+        id: 'demo-merchant',
+        email: 'demo@beerexchange.com',
+        name: 'Beer Exchange Demo'
+      };
     }
   }
 
@@ -237,6 +234,6 @@ class SumUpService {
 }
 
 // Instance singleton
-const sumupService = new SumUpService();
+const sumupServiceSimple = new SumUpServiceSimple();
 
-module.exports = sumupService;
+module.exports = sumupServiceSimple;

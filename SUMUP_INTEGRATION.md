@@ -2,7 +2,9 @@
 
 ## 🎯 Vue d'ensemble
 
-L'intégration SumUp permet de synchroniser automatiquement les produits et les ventes entre Beer Exchange et SumUp, offrant une solution de paiement professionnelle pour vos soirées étudiantes.
+L'intégration SumUp permet de créer des paiements professionnels via l'API SumUp pour vos soirées étudiantes. 
+
+⚠️ **Note importante** : L'API SumUp ne fournit pas d'endpoints publics pour la gestion du catalogue de produits. Cette intégration se concentre sur la création de paiements et l'authentification OAuth.
 
 ## 🔧 Configuration
 
@@ -34,10 +36,10 @@ SUMUP_REDIRECT_URI=http://localhost:5000/api/sumup/callback
 - Gestion automatique des tokens
 - Rafraîchissement automatique des tokens expirés
 
-### ✅ Synchronisation des Produits
-- **Import depuis SumUp** : Récupération automatique du catalogue
-- **Export vers SumUp** : Création/mise à jour des produits
-- **Synchronisation bidirectionnelle** : Mise à jour en temps réel
+### ✅ Gestion des Paiements
+- **Création de paiements** : Via l'API SumUp officielle
+- **Authentification OAuth** : Sécurisée et conforme
+- **Simulation de produits** : Pour la démonstration
 
 ### ✅ Gestion des Ventes
 - Création automatique de paiements SumUp
