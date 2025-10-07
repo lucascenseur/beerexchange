@@ -13,6 +13,7 @@ const PublicDisplayCompact = () => {
     averagePrice: 0
   });
   const { onProductUpdate, onProductCreated, onProductDeleted } = useSocket();
+  const navigate = useNavigate();
 
   // Récupérer les produits
   const fetchProducts = async () => {

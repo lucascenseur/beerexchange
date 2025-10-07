@@ -7,9 +7,8 @@ import { SocketProvider } from './contexts/SocketContext';
 // Pages
 import PublicDisplay from './pages/PublicDisplay';
 import PublicDisplayCompact from './pages/PublicDisplayCompact';
-import ServerLogin from './pages/ServerLogin';
+import SimpleLogin from './pages/SimpleLogin';
 import ServerDashboard from './pages/ServerDashboard';
-import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 
 // Composants
@@ -27,26 +26,21 @@ function App() {
               <Route path="/public" element={<PublicDisplayCompact />} />
               <Route path="/public/full" element={<PublicDisplay />} />
               
+              {/* Interface de connexion simple */}
+              <Route path="/login" element={<SimpleLogin />} />
+              <Route path="/server/login" element={<SimpleLogin />} />
+              <Route path="/admin/login" element={<SimpleLogin />} />
+              
               {/* Interface serveur */}
-              <Route path="/server/login" element={<ServerLogin />} />
               <Route 
                 path="/server/dashboard" 
-                element={
-                  <ProtectedRoute allowedRoles={['server', 'admin']}>
-                    <ServerDashboard />
-                  </ProtectedRoute>
-                } 
+                element={<ServerDashboard />}
               />
               
               {/* Interface administrateur */}
-              <Route path="/admin/login" element={<AdminLogin />} />
               <Route 
                 path="/admin/dashboard" 
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                } 
+                element={<AdminDashboard />}
               />
               
               {/* Redirection par défaut */}
