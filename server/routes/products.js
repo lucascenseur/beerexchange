@@ -8,10 +8,20 @@ const router = express.Router();
 // Route publique pour obtenir tous les produits actifs (interface publique)
 router.get('/public', async (req, res) => {
   try {
-    const products = await Product.find({ isActive: true })
-      .sort({ category: 1, name: 1 });
+    const products = await Product.findAll({
+      where: { is_active: true },
+      order: [['category', 'ASC'], ['name', 'ASC']]
+    });
     
-    const publicProducts = products.map(product => product.toPublicJSON());
+    const publicProducts = products.map(product => ({
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      category: product.category,
+      currentPrice: parseFloat(product.current_price),
+      stock: product.stock,
+      image: product.image
+    }));
     
     res.json({
       products: publicProducts,
@@ -27,13 +37,15 @@ router.get('/public', async (req, res) => {
 router.get('/', authenticateToken, requireServerOrAdmin, async (req, res) => {
   try {
     const { category, active } = req.query;
-    const filter = {};
+    const where = {};
     
-    if (category) filter.category = category;
-    if (active !== undefined) filter.isActive = active === 'true';
+    if (category) where.category = category;
+    if (active !== undefined) where.is_active = active === 'true';
     
-    const products = await Product.find(filter)
-      .sort({ category: 1, name: 1 });
+    const products = await Product.findAll({
+      where,
+      order: [['category', 'ASC'], ['name', 'ASC']]
+    });
     
     res.json({
       products,
@@ -48,7 +60,7 @@ router.get('/', authenticateToken, requireServerOrAdmin, async (req, res) => {
 // Route pour obtenir un produit par ID
 router.get('/:id', authenticateToken, requireServerOrAdmin, async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findByPk(req.params.id);
     
     if (!product) {
       return res.status(404).json({ message: 'Produit non trouvé' });
@@ -64,13 +76,13 @@ router.get('/:id', authenticateToken, requireServerOrAdmin, async (req, res) => 
 // Route pour enregistrer une vente (+1 vente)
 router.post('/:id/sell', authenticateToken, requireServerOrAdmin, async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findByPk(req.params.id);
     
     if (!product) {
       return res.status(404).json({ message: 'Produit non trouvé' });
     }
     
-    if (!product.isActive) {
+    if (!product.is_active) {
       return res.status(400).json({ message: 'Produit inactif' });
     }
     
@@ -79,18 +91,38 @@ router.post('/:id/sell', authenticateToken, requireServerOrAdmin, async (req, re
     }
     
     // Enregistrer la vente
-    await product.recordSale();
+    await product.update({
+      stock: product.stock - 1,
+      sales_count: product.sales_count + 1
+    });
     
     // Émettre l'événement Socket.io pour mise à jour temps réel
     const io = req.app.get('io');
     if (io) {
-      io.to('public').emit('product-updated', product.toPublicJSON());
+      const publicProduct = {
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        category: product.category,
+        currentPrice: parseFloat(product.current_price),
+        stock: product.stock - 1,
+        image: product.image
+      };
+      io.to('public').emit('product-updated', publicProduct);
       io.to('servers').emit('product-updated', product);
     }
     
     res.json({
       message: 'Vente enregistrée avec succès',
-      product: product.toPublicJSON()
+      product: {
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        category: product.category,
+        currentPrice: parseFloat(product.current_price),
+        stock: product.stock - 1,
+        image: product.image
+      }
     });
     
   } catch (error) {
@@ -105,16 +137,17 @@ router.post('/:id/sell', authenticateToken, requireServerOrAdmin, async (req, re
 // Route pour obtenir l'historique des prix d'un produit
 router.get('/:id/price-history', authenticateToken, requireServerOrAdmin, async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findByPk(req.params.id);
     
     if (!product) {
       return res.status(404).json({ message: 'Produit non trouvé' });
     }
     
+    // Pour l'instant, retourner des données de base
     res.json({
-      priceHistory: product.priceHistory,
-      currentPrice: product.currentPrice,
-      priceVariation: product.getPriceVariation()
+      priceHistory: [],
+      currentPrice: parseFloat(product.current_price),
+      priceVariation: 0
     });
   } catch (error) {
     console.error('Erreur récupération historique prix:', error);
@@ -125,20 +158,20 @@ router.get('/:id/price-history', authenticateToken, requireServerOrAdmin, async 
 // Route pour obtenir les statistiques d'un produit
 router.get('/:id/stats', authenticateToken, requireServerOrAdmin, async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findByPk(req.params.id);
     
     if (!product) {
       return res.status(404).json({ message: 'Produit non trouvé' });
     }
     
     const stats = {
-      totalSales: product.salesCount,
+      totalSales: product.sales_count,
       currentStock: product.stock,
-      stockSold: product.initialStock - product.stock,
-      currentPrice: product.currentPrice,
-      basePrice: product.basePrice,
-      priceVariation: product.getPriceVariation(),
-      priceHistory: product.priceHistory.slice(-10) // 10 derniers points
+      stockSold: product.initial_stock - product.stock,
+      currentPrice: parseFloat(product.current_price),
+      basePrice: parseFloat(product.base_price),
+      priceVariation: 0,
+      priceHistory: [] // 10 derniers points
     };
     
     res.json({ stats });

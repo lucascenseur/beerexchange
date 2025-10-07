@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Beer, Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import toast from 'react-hot-toast';
 
 const ServerLogin = () => {
   const [formData, setFormData] = useState({

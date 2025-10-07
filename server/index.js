@@ -16,15 +16,18 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.NODE_ENV === 'production' ? false : "http://localhost:3000",
+    origin: process.env.NODE_ENV === 'production' ? false : ["http://localhost:3000", "http://localhost:3001"],
     methods: ["GET", "POST"]
   }
 });
 
+// Configuration trust proxy pour éviter l'erreur rate-limit
+app.set('trust proxy', 1);
+
 // Middleware de sécurité
 app.use(helmet());
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? false : "http://localhost:3000",
+  origin: process.env.NODE_ENV === 'production' ? false : ["http://localhost:3000", "http://localhost:3001"],
   credentials: true
 }));
 
