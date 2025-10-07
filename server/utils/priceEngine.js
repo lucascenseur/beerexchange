@@ -203,9 +203,9 @@ class PriceEngine {
       newPrice = currentPrice + 0.05;
       console.log(`📈 ${product.name} (même type): +0.05€ (${currentPrice}€ → ${newPrice}€)`);
     } else {
-      // Les autres produits (hors écocup) baissent de 0,01 € (1 centime)
-      newPrice = currentPrice - 0.01;
-      console.log(`📉 ${product.name}: -0.01€ (${currentPrice}€ → ${newPrice}€)`);
+      // Les autres produits (hors écocup) baissent de 0,005 € (0,5 centime)
+      newPrice = currentPrice - 0.005;
+      console.log(`📉 ${product.name}: -0.005€ (${currentPrice}€ → ${newPrice}€)`);
     }
     
     // Limiter les variations (entre 50% et 200% du prix de base)
@@ -248,8 +248,8 @@ class PriceEngine {
       // Augmenter le prix de 10 centimes par vente
       return 0.10;
     } else {
-      // Diminuer le prix de 1 centime par vente pour les autres produits
-      return -0.01;
+      // Diminuer le prix de 0,5 centime par vente pour les autres produits
+      return -0.005;
     }
   }
 }
