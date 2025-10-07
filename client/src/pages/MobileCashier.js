@@ -35,9 +35,21 @@ const MobileCashier = () => {
     try {
       setLoading(true);
       const response = await axios.get('/api/products');
-      const activeProducts = response.data.products.filter(product => 
-        product.is_active && product.currentPrice > 0
+      console.log('📦 Réponse API produits:', response.data);
+      
+      // Vérifier la structure de la réponse
+      let productsData = response.data;
+      if (response.data.products) {
+        productsData = response.data.products;
+      }
+      
+      console.log('📦 Données produits:', productsData);
+      
+      const activeProducts = productsData.filter(product => 
+        product && product.is_active && product.currentPrice > 0
       );
+      
+      console.log('📦 Produits actifs:', activeProducts);
       setProducts(activeProducts);
     } catch (error) {
       console.error('Erreur chargement produits:', error);
@@ -145,6 +157,9 @@ const MobileCashier = () => {
     return acc;
   }, {});
 
+  console.log('📊 Produits par catégorie:', productsByCategory);
+  console.log('📊 Nombre total de produits:', products.length);
+
   const categoryNames = {
     beer: '🍺 Bières',
     cocktail: '🍹 Cocktails',
@@ -186,6 +201,14 @@ const MobileCashier = () => {
 
       {/* Produits - Plein écran */}
       <div className="h-full overflow-y-auto pb-20 p-4">
+        {/* Debug info */}
+        {!loading && products.length === 0 && (
+          <div className="text-center py-8 text-red-400">
+            <p>❌ Aucun produit trouvé</p>
+            <p className="text-sm">Vérifiez la console pour plus de détails</p>
+          </div>
+        )}
+        
         <div className="space-y-6">
           {Object.entries(productsByCategory).map(([category, categoryProducts]) => (
             <div key={category}>
