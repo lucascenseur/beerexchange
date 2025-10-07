@@ -118,13 +118,20 @@ const BeerExchangeDisplay = () => {
   // Récupérer les statistiques quotidiennes réelles depuis l'API
   const fetchDailyStats = async () => {
     try {
+      console.log('🔍 Récupération des statistiques quotidiennes depuis l\'API...');
       const response = await axios.get('/api/products/stats/daily');
+      console.log('📡 Réponse API stats:', response.data);
+      
       if (response.data.success) {
         setDailyStats(response.data.stats);
-        console.log('📊 Statistiques quotidiennes mises à jour:', response.data.stats);
+        console.log('✅ Statistiques quotidiennes mises à jour (API):', response.data.stats);
+      } else {
+        console.warn('⚠️ API stats retourne success: false');
+        calculateDailyStats(products);
       }
     } catch (error) {
-      console.error('Erreur récupération statistiques quotidiennes:', error);
+      console.error('❌ Erreur récupération statistiques quotidiennes:', error);
+      console.log('🔄 Utilisation du fallback local...');
       // Fallback sur le calcul local si l'API échoue
       calculateDailyStats(products);
     }
@@ -132,6 +139,9 @@ const BeerExchangeDisplay = () => {
 
   // Calculer les statistiques quotidiennes (fallback)
   const calculateDailyStats = (products) => {
+    console.log('⚠️ ATTENTION: Utilisation du calcul local (fallback) - CA peut être incorrect!');
+    console.log('📊 Produits pour calcul local:', products.length);
+    
     // Exclure l'écocup des statistiques
     const productsWithoutEcocup = products.filter(product => 
       !product.name.toLowerCase().includes('écocup') && 
@@ -142,6 +152,7 @@ const BeerExchangeDisplay = () => {
     const totalRevenue = productsWithoutEcocup.reduce((sum, product) => {
       const sales = product.salesCount || 0;
       const price = parseFloat(product.currentPrice || 0);
+      console.log(`💰 ${product.name}: ${sales} ventes × ${price}€ = ${sales * price}€`);
       return sum + (sales * price);
     }, 0);
 
@@ -156,7 +167,10 @@ const BeerExchangeDisplay = () => {
         revenue: (product.salesCount || 0) * parseFloat(product.currentPrice || 0)
       }));
 
-    return { totalSales, totalRevenue, topProducts };
+    const result = { totalSales, totalRevenue, topProducts };
+    console.log('📊 Résultat calcul local:', result);
+    setDailyStats(result);
+    return result;
   };
 
   // Générer un historique de prix basé sur les vraies données (1 heure)
