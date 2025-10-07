@@ -23,6 +23,8 @@ const SumUpAdmin = () => {
   const [syncing, setSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState(null);
   const [config, setConfig] = useState(null);
+  const [showManualImport, setShowManualImport] = useState(false);
+  const [newProduct, setNewProduct] = useState({ name: '', price: '', description: '' });
   const navigate = useNavigate();
 
   // Vérifier la configuration SumUp
@@ -73,6 +75,40 @@ const SumUpAdmin = () => {
     } catch (error) {
       console.error('Erreur import produits SumUp:', error);
       toast.error('Erreur lors de l\'import des produits SumUp');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Ajouter un produit manuellement
+  const addManualProduct = async () => {
+    if (!newProduct.name || !newProduct.price) {
+      toast.error('Nom et prix requis');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post('/api/products', {
+        name: newProduct.name,
+        description: newProduct.description,
+        category: 'other',
+        base_price: parseFloat(newProduct.price),
+        current_price: parseFloat(newProduct.price),
+        stock: 999,
+        initial_stock: 999,
+        is_active: true
+      });
+
+      toast.success(`Produit "${newProduct.name}" ajouté avec succès`);
+      setNewProduct({ name: '', price: '', description: '' });
+      setShowManualImport(false);
+      
+      // Rafraîchir la liste
+      fetchSumUpProducts();
+    } catch (error) {
+      console.error('Erreur ajout produit:', error);
+      toast.error('Erreur lors de l\'ajout du produit');
     } finally {
       setLoading(false);
     }
@@ -318,6 +354,14 @@ const SumUpAdmin = () => {
                 <Download className="w-4 h-4" />
                 Importer
               </button>
+              
+              <button
+                onClick={() => setShowManualImport(true)}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200 flex items-center gap-2"
+              >
+                <Upload className="w-4 h-4" />
+                Ajouter manuellement
+              </button>
             </div>
           </div>
 
@@ -356,7 +400,17 @@ const SumUpAdmin = () => {
           ) : (
             <div className="text-center py-8">
               <CreditCard className="w-12 h-12 mx-auto mb-4 text-white/50" />
-              <p className="text-white/70">Aucun produit trouvé dans SumUp</p>
+              <p className="text-white/70 mb-4">Aucun produit trouvé dans SumUp</p>
+              <p className="text-white/50 text-sm mb-4">
+                L'API SumUp ne permet pas de récupérer les produits automatiquement.
+              </p>
+              <button
+                onClick={() => setShowManualImport(true)}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200 flex items-center gap-2 mx-auto"
+              >
+                <Upload className="w-4 h-4" />
+                Ajouter vos produits manuellement
+              </button>
             </div>
           )}
         </div>
@@ -372,6 +426,78 @@ const SumUpAdmin = () => {
           <p>4. <strong>Paiements :</strong> Les ventes peuvent être synchronisées avec SumUp pour le suivi</p>
         </div>
       </div>
+
+      {/* Modal d'ajout manuel */}
+      {showManualImport && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-purple-900 rounded-lg p-6 w-full max-w-md mx-4 border border-purple-500/30"
+          >
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Upload className="w-5 h-5" />
+              Ajouter un produit manuellement
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Nom du produit</label>
+                <input
+                  type="text"
+                  value={newProduct.name}
+                  onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-purple-400"
+                  placeholder="Ex: Kwak 25cl"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Prix (€)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={newProduct.price}
+                  onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-purple-400"
+                  placeholder="Ex: 4.00"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Description (optionnel)</label>
+                <textarea
+                  value={newProduct.description}
+                  onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-purple-400 h-20 resize-none"
+                  placeholder="Description du produit..."
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={addManualProduct}
+                disabled={loading || !newProduct.name || !newProduct.price}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                Ajouter
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowManualImport(false);
+                  setNewProduct({ name: '', price: '', description: '' });
+                }}
+                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg"
+              >
+                Annuler
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
