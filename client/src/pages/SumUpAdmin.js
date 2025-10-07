@@ -29,6 +29,8 @@ const SumUpAdmin = () => {
   const [newProduct, setNewProduct] = useState({ name: '', price: '', description: '' });
   const [syncStatus, setSyncStatus] = useState(null);
   const [syncLoading, setSyncLoading] = useState(false);
+  const [transactions, setTransactions] = useState([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
   const navigate = useNavigate();
 
   // Vérifier la configuration SumUp
@@ -176,6 +178,20 @@ const SumUpAdmin = () => {
       toast.error('Erreur lors de la synchronisation manuelle');
     } finally {
       setSyncLoading(false);
+    }
+  };
+
+  // Récupérer les transactions SumUp
+  const fetchTransactions = async () => {
+    setTransactionsLoading(true);
+    try {
+      const response = await axios.get('/api/sumup/transactions?limit=20&minutes=60');
+      setTransactions(response.data.transactions || []);
+    } catch (error) {
+      console.error('Erreur récupération transactions:', error);
+      toast.error('Erreur lors de la récupération des transactions');
+    } finally {
+      setTransactionsLoading(false);
     }
   };
 
@@ -387,6 +403,74 @@ const SumUpAdmin = () => {
               <strong>⚠️ Limitation API SumUp :</strong> L'API SumUp ne permet pas de modifier les prix des produits. 
               La synchronisation fonctionne uniquement de SumUp vers Beer Exchange. 
               Les prix dynamiques ne sont visibles que dans Beer Exchange.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Transactions SumUp */}
+      {authStatus?.authenticated && (
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 mt-6 border border-white/20">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              <CreditCard className="w-6 h-6" />
+              Transactions SumUp ({transactions.length})
+            </h3>
+            <button
+              onClick={fetchTransactions}
+              disabled={transactionsLoading}
+              className="px-4 py-2 bg-beer-gold text-purple-900 rounded-lg hover:bg-yellow-400 transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${transactionsLoading ? 'animate-spin' : ''}`} />
+              Actualiser
+            </button>
+          </div>
+
+          {transactionsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw className="w-6 h-6 animate-spin text-beer-gold" />
+              <span className="ml-2">Chargement des transactions...</span>
+            </div>
+          ) : transactions.length > 0 ? (
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {transactions.map((transaction, index) => (
+                <div key={index} className="bg-white/5 rounded-lg p-4 border border-white/10">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-semibold text-white">{transaction.product_name || 'Produit inconnu'}</p>
+                      <p className="text-sm text-white/70">
+                        {new Date(transaction.timestamp).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-white/50">
+                        Type: {transaction.payment_type || 'card'} • Quantité: {transaction.quantity || 1}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-beer-gold">
+                        {transaction.amount?.toFixed(2)}€
+                      </p>
+                      {transaction.transaction_id && (
+                        <p className="text-xs text-white/50">
+                          ID: {transaction.transaction_id}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-white/70">
+              <CreditCard className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>Aucune transaction récente trouvée</p>
+              <p className="text-sm">Les transactions des dernières 60 minutes s'afficheront ici</p>
+            </div>
+          )}
+
+          <div className="mt-4 p-3 bg-green-500/20 border border-green-500/30 rounded-lg">
+            <p className="text-green-300 text-sm">
+              <strong>🛒 Transactions en temps réel :</strong> Les transactions SumUp sont récupérées automatiquement 
+              et déclenchent le système de bourse dans Beer Exchange.
             </p>
           </div>
         </div>

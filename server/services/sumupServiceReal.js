@@ -278,6 +278,44 @@ class SumUpServiceReal {
     return config;
   }
 
+  // Récupérer les transactions SumUp récentes
+  async getTransactions(limit = 10, oldest = null, newest = null) {
+    try {
+      console.log('🛒 Récupération des transactions SumUp...');
+      
+      let url = '/v0.1/me/transactions/history';
+      const params = new URLSearchParams();
+      
+      if (limit) params.append('limit', limit.toString());
+      if (oldest) params.append('oldest', oldest);
+      if (newest) params.append('newest', newest);
+      
+      if (params.toString()) {
+        url += '?' + params.toString();
+      }
+      
+      const response = await this.makeAuthenticatedRequest('GET', url);
+      console.log(`✅ ${response.length || 0} transactions SumUp récupérées`);
+      return response;
+    } catch (error) {
+      console.error('❌ Erreur lors de la récupération des transactions SumUp:', error.message);
+      return [];
+    }
+  }
+
+  // Récupérer les transactions des dernières minutes
+  async getRecentTransactions(minutes = 5) {
+    try {
+      const now = new Date();
+      const oldest = new Date(now.getTime() - (minutes * 60 * 1000));
+      
+      return await this.getTransactions(50, oldest.toISOString(), now.toISOString());
+    } catch (error) {
+      console.error('❌ Erreur récupération transactions récentes:', error.message);
+      return [];
+    }
+  }
+
   // Obtenir le statut du service
   getStatus() {
     return {

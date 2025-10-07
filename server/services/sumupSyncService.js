@@ -273,14 +273,28 @@ class SumUpSyncService {
     ];
   }
 
-  // Récupérer les transactions SumUp récentes (simulation)
+  // Récupérer les transactions SumUp récentes
   async getSumUpTransactions() {
-    // Simulation car l'API SumUp ne permet pas de récupérer les transactions
-    // En production, vous devriez utiliser l'API SumUp réelle ou des webhooks
-    return [
-      // Exemple de transaction simulée
-      // { product_name: 'Kwak 25cl', amount: 4.00, quantity: 1, timestamp: new Date() }
-    ];
+    try {
+      const sumupService = require('./sumupServiceReal');
+      await sumupService.loadTokens();
+      
+      // Récupérer les transactions des dernières 5 minutes
+      const transactions = await sumupService.getRecentTransactions(5);
+      
+      // Convertir les transactions SumUp au format Beer Exchange
+      return transactions.map(transaction => ({
+        product_name: transaction.product_name || 'Produit inconnu',
+        amount: parseFloat(transaction.amount) || 0,
+        quantity: transaction.quantity || 1,
+        timestamp: new Date(transaction.timestamp || transaction.created_at),
+        transaction_id: transaction.id,
+        payment_type: transaction.payment_type || 'card'
+      }));
+    } catch (error) {
+      console.error('❌ Erreur récupération transactions SumUp:', error);
+      return [];
+    }
   }
 
   // Mettre à jour le prix d'un produit dans SumUp (simulation)

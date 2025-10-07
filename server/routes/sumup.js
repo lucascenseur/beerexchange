@@ -598,4 +598,26 @@ router.post('/sync/now', async (req, res) => {
   }
 });
 
+// Route pour récupérer les transactions SumUp
+router.get('/transactions', async (req, res) => {
+  try {
+    const { limit = 10, minutes = 5 } = req.query;
+    
+    await sumupService.loadTokens();
+    const transactions = await sumupService.getRecentTransactions(parseInt(minutes));
+    
+    res.json({
+      success: true,
+      transactions: transactions.slice(0, parseInt(limit)),
+      count: transactions.length
+    });
+  } catch (error) {
+    console.error('❌ Erreur récupération transactions:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des transactions'
+    });
+  }
+});
+
 module.exports = router;
