@@ -27,8 +27,6 @@ const SimpleAdminDashboard = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [stats, setStats] = useState({
     totalProducts: 0,
-    totalStock: 0,
-    lowStockCount: 0,
     totalSales: 0,
     totalRevenue: 0
   });
@@ -70,32 +68,6 @@ const SimpleAdminDashboard = () => {
     }
   };
 
-  // Fonction pour mettre à jour le stock d'un produit
-  const handleStockUpdate = async (productId, newStock) => {
-    try {
-      const response = await axios.put(`/api/products/${productId}`, {
-        stock: newStock
-      });
-      
-      if (response.data.success) {
-        toast.success('Stock mis à jour !');
-        // Mettre à jour l'état local
-        setProducts(prev => prev.map(product => 
-          product.id === productId 
-            ? { ...product, stock: newStock }
-            : product
-        ));
-        setFilteredProducts(prev => prev.map(product => 
-          product.id === productId 
-            ? { ...product, stock: newStock }
-            : product
-        ));
-      }
-    } catch (error) {
-      console.error('Erreur mise à jour stock:', error);
-      toast.error('Erreur lors de la mise à jour du stock');
-    }
-  };
 
   // Fonction pour rafraîchir les produits
   const refreshProducts = async () => {
@@ -113,13 +85,11 @@ const SimpleAdminDashboard = () => {
       
       // Calculer les statistiques
       const totalProducts = response.data.products.length;
-      const totalStock = response.data.products.reduce((sum, product) => sum + (product.stock || 0), 0);
-      const lowStockCount = response.data.products.filter(product => (product.stock || 0) < 10).length;
       const totalSales = response.data.products.reduce((sum, product) => sum + (product.salesCount || 0), 0);
       const totalRevenue = response.data.products.reduce((sum, product) => 
         sum + ((product.salesCount || 0) * (product.currentPrice || 0)), 0);
       
-      setStats({ totalProducts, totalStock, lowStockCount, totalSales, totalRevenue });
+      setStats({ totalProducts, totalSales, totalRevenue });
     } catch (error) {
       console.error('Erreur récupération produits:', error);
       toast.error('Erreur lors du chargement des produits');
@@ -217,16 +187,11 @@ const SimpleAdminDashboard = () => {
       </div>
 
       {/* Statistiques */}
-      <div className="grid grid-cols-5 gap-4 mb-4">
+      <div className="grid grid-cols-3 gap-4 mb-4">
         <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 text-center">
           <Package className="w-6 h-6 text-beer-gold mx-auto mb-1" />
           <p className="text-lg font-bold text-white">{stats.totalProducts}</p>
           <p className="text-white/70 text-sm">Produits</p>
-        </div>
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 text-center">
-          <Beer className="w-6 h-6 text-green-400 mx-auto mb-1" />
-          <p className="text-lg font-bold text-white">{stats.totalStock}</p>
-          <p className="text-white/70 text-sm">Stock total</p>
         </div>
         <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 text-center">
           <TrendingUp className="w-6 h-6 text-blue-400 mx-auto mb-1" />
@@ -237,11 +202,6 @@ const SimpleAdminDashboard = () => {
           <DollarSign className="w-6 h-6 text-yellow-400 mx-auto mb-1" />
           <p className="text-lg font-bold text-white">{stats.totalRevenue.toFixed(2)}€</p>
           <p className="text-white/70 text-sm">Chiffre d'affaires</p>
-        </div>
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 text-center">
-          <Clock className="w-6 h-6 text-orange-400 mx-auto mb-1" />
-          <p className="text-lg font-bold text-white">{stats.lowStockCount}</p>
-          <p className="text-white/70 text-sm">Stock faible</p>
         </div>
       </div>
 
@@ -299,9 +259,6 @@ const SimpleAdminDashboard = () => {
                     <p className="text-white/70 text-sm">{product.description}</p>
                     <div className="flex items-center space-x-4 mt-2">
                       <span className="text-beer-gold font-bold">{product.currentPrice}€</span>
-                      <span className={`text-sm ${product.stock < 10 ? 'text-red-400' : 'text-white/70'}`}>
-                        Stock: {product.stock}
-                      </span>
                       <span className="text-white/70 text-sm">
                         Ventes: {product.salesCount || 0}
                       </span>
@@ -315,12 +272,7 @@ const SimpleAdminDashboard = () => {
                       value={product.currentPrice}
                       onChange={(e) => handlePriceUpdate(product.id, parseFloat(e.target.value))}
                       className="w-20 px-2 py-1 bg-white/10 border border-white/20 rounded text-white text-sm"
-                    />
-                    <input
-                      type="number"
-                      value={product.stock}
-                      onChange={(e) => handleStockUpdate(product.id, parseInt(e.target.value))}
-                      className="w-16 px-2 py-1 bg-white/10 border border-white/20 rounded text-white text-sm"
+                      placeholder="Prix"
                     />
                   </div>
                 </div>
