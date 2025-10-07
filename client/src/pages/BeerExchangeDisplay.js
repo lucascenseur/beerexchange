@@ -11,8 +11,26 @@ const BeerExchangeDisplay = () => {
   const [tradingPeriod] = useState(1);
   const [priceChanges, setPriceChanges] = useState({});
   const [priceHistory, setPriceHistory] = useState({});
+  const [salesLogs, setSalesLogs] = useState([]);
 
   const { onProductUpdate, onProductCreated, onProductDeleted } = useSocket();
+
+  // Ajouter un log de vente
+  const addSalesLog = (productName, quantity, price) => {
+    const log = {
+      id: Date.now(),
+      productName,
+      quantity,
+      price,
+      timestamp: new Date(),
+      time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    };
+    
+    setSalesLogs(prev => {
+      const newLogs = [log, ...prev].slice(0, 20); // Garder seulement les 20 derniers logs
+      return newLogs;
+    });
+  };
 
   // Récupérer l'historique réel des prix depuis l'API
   const fetchPriceHistory = async (productId) => {
@@ -108,6 +126,18 @@ const BeerExchangeDisplay = () => {
 
   // L'historique se met à jour seulement quand les prix changent via Socket.io
 
+  // Nettoyer les anciens logs automatiquement
+  useEffect(() => {
+    const cleanupInterval = setInterval(() => {
+      setSalesLogs(prev => {
+        const now = Date.now();
+        return prev.filter(log => now - log.timestamp < 30000); // Garder les logs de moins de 30 secondes
+      });
+    }, 5000); // Vérifier toutes les 5 secondes
+
+    return () => clearInterval(cleanupInterval);
+  }, []);
+
   // Récupérer les produits
   const fetchProducts = async () => {
     try {
@@ -155,6 +185,17 @@ const BeerExchangeDisplay = () => {
           const newPrice = updatedProduct.currentPrice || 0;
           const priceChange = newPrice - currentPrice;
           const trend = priceChange > 0 ? 'up' : priceChange < 0 ? 'down' : 'stable';
+          
+          // Détecter une vente (augmentation du salesCount)
+          const currentSales = product.salesCount || 0;
+          const newSales = updatedProduct.salesCount || 0;
+          const salesIncrease = newSales - currentSales;
+          
+          if (salesIncrease > 0) {
+            // Ajouter un log de vente
+            addSalesLog(product.name, salesIncrease, newPrice);
+            console.log(`🛒 Vente détectée: ${salesIncrease}x ${product.name} à ${newPrice}€`);
+          }
           
           // Animation de changement de prix
           setPriceChanges(prev => ({
@@ -434,6 +475,45 @@ const BeerExchangeDisplay = () => {
               </motion.div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Barre de logs des ventes */}
+      <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-sm border-t border-slate-700 p-2 z-40">
+        <div className="flex items-center space-x-4 overflow-x-auto">
+          <div className="flex items-center space-x-2 text-green-400 font-mono text-sm whitespace-nowrap">
+            <Beer className="w-4 h-4" />
+            <span>VENTES EN TEMPS RÉEL:</span>
+          </div>
+          
+          <div className="flex space-x-3 overflow-x-auto">
+            <AnimatePresence>
+              {salesLogs.map((log) => (
+                <motion.div
+                  key={log.id}
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -50 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex items-center space-x-2 bg-green-500/20 border border-green-500/30 rounded px-3 py-1 whitespace-nowrap"
+                >
+                  <span className="text-green-400 font-mono text-xs">{log.time}</span>
+                  <span className="text-white text-sm">
+                    {log.quantity}x {log.productName}
+                  </span>
+                  <span className="text-green-300 font-bold text-sm">
+                    {log.price.toFixed(2)}€
+                  </span>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+          
+          {salesLogs.length === 0 && (
+            <div className="text-slate-500 text-sm font-mono">
+              En attente des ventes...
+            </div>
+          )}
         </div>
       </div>
 

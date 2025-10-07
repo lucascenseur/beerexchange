@@ -53,7 +53,8 @@ class PriceEngine {
       const totalSales = products.reduce((sum, product) => sum + (product.salesCount || 0), 0);
       const marketTrend = this.calculateMarketTrend(totalSales);
 
-      console.log(`🔄 Mise à jour des prix après vente de ${quantity}x produit ${soldProductId}`);
+      const soldProduct = products.find(p => p.id === soldProductId);
+      console.log(`🔄 Mise à jour des prix après vente de ${quantity}x ${soldProduct?.name || 'produit inconnu'}`);
 
       for (const product of products) {
         const newPrice = this.calculateNewPriceAfterSale(product, marketTrend, soldProductId, quantity);
@@ -72,7 +73,6 @@ class PriceEngine {
           // Émettre l'événement Socket.io
           if (io) {
             io.emit('product-updated', product);
-            console.log(`💰 Prix mis à jour: ${product.name} - ${product.currentPrice}€ → ${newPrice}€`);
           }
         }
       }
@@ -141,27 +141,26 @@ class PriceEngine {
 
   // Calculer le nouveau prix d'un produit après une vente
   calculateNewPriceAfterSale(product, marketTrend, soldProductId, quantity) {
-    const basePrice = parseFloat(product.basePrice);
     const currentPrice = parseFloat(product.currentPrice);
-    const salesCount = product.salesCount || 0;
+    const basePrice = parseFloat(product.basePrice);
     
-    // Facteur de demande basé sur les ventes du produit
-    const productDemand = 1 + (salesCount / 15); // Plus de ventes = prix plus élevé
+    let newPrice = currentPrice;
     
-    // Facteur de marché global (influence de toutes les ventes)
-    const marketInfluence = 1 + (marketTrend.trend * 0.2); // Jusqu'à 40% d'influence du marché
+    if (product.id === soldProductId) {
+      // Le produit vendu gagne 2 centimes par quantité vendue
+      newPrice = currentPrice + (quantity * 0.02);
+      console.log(`📈 ${product.name}: +${quantity * 0.02}€ (${currentPrice}€ → ${newPrice}€)`);
+    } else {
+      // Les autres produits perdent 1 centime
+      newPrice = currentPrice - 0.01;
+      console.log(`📉 ${product.name}: -0.01€ (${currentPrice}€ → ${newPrice}€)`);
+    }
     
-    // Si c'est le produit vendu, il a plus d'impact
-    const saleImpact = product.id === soldProductId ? 1 + (quantity * 0.1) : 1;
+    // Limiter les variations (entre 50% et 200% du prix de base)
+    newPrice = Math.max(basePrice * 0.5, Math.min(basePrice * 2.0, newPrice));
     
-    // Variation plus petite et basée sur l'activité réelle
-    const activityVariation = (this.marketActivity / 50) * 0.1; // Basé sur l'activité réelle
-    
-    // Calcul du nouveau prix
-    let newPrice = basePrice * productDemand * marketInfluence * saleImpact * (1 + activityVariation);
-    
-    // Limiter les variations (entre 70% et 150% du prix de base)
-    newPrice = Math.max(basePrice * 0.7, Math.min(basePrice * 1.5, newPrice));
+    // S'assurer que le prix ne descend pas en dessous de 0.10€
+    newPrice = Math.max(0.10, newPrice);
     
     return parseFloat(newPrice.toFixed(2));
   }
