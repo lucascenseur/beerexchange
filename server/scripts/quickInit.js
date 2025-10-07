@@ -96,7 +96,7 @@ const realProducts = [
   // Vins
   {
     name: 'Vin blanc (verre)',
-    category: 'beer',
+    category: 'cocktail',
     description: 'Vin blanc au verre',
     basePrice: 3.50,
     currentPrice: 3.50,
@@ -107,7 +107,7 @@ const realProducts = [
   },
   {
     name: 'Rosé (verre)',
-    category: 'beer',
+    category: 'cocktail',
     description: 'Rosé au verre',
     basePrice: 3.50,
     currentPrice: 3.50,
@@ -119,7 +119,7 @@ const realProducts = [
   // Softs
   {
     name: 'Soft classique',
-    category: 'beer',
+    category: 'soft',
     description: 'Boisson non alcoolisée',
     basePrice: 2.00,
     currentPrice: 2.00,
@@ -130,7 +130,7 @@ const realProducts = [
   },
   {
     name: 'RedBull',
-    category: 'beer',
+    category: 'soft',
     description: 'Boisson énergisante',
     basePrice: 3.00,
     currentPrice: 3.00,
@@ -141,7 +141,7 @@ const realProducts = [
   },
   {
     name: 'Eau',
-    category: 'beer',
+    category: 'soft',
     description: 'Eau plate',
     basePrice: 1.00,
     currentPrice: 1.00,
@@ -153,7 +153,7 @@ const realProducts = [
   // Écocup
   {
     name: 'Écocup',
-    category: 'beer',
+    category: 'other',
     description: 'Écocup non remboursable',
     basePrice: 1.00,
     currentPrice: 1.00,
@@ -182,9 +182,9 @@ async function quickInit() {
       
       // Créer l'entrée d'historique des prix
       await PriceHistory.create({
-        product_id: product.id,
+        productId: product.id,
         price: product.currentPrice,
-        sales_count: product.salesCount
+        salesCount: product.salesCount
       });
       
       console.log(`✅ ${product.name} créé - ${product.currentPrice}€`);
