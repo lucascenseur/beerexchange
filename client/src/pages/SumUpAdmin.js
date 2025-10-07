@@ -11,7 +11,7 @@ import {
   ExternalLink,
   ArrowLeft,
   Settings,
-  Sync,
+  RotateCcw,
   PlayCircle,
   PauseCircle
 } from 'lucide-react';
@@ -483,7 +483,7 @@ const SumUpAdmin = () => {
       {authStatus?.authenticated && (
         <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 mt-6 border border-white/20">
           <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <Sync className="w-6 h-6" />
+            <RotateCcw className="w-6 h-6" />
             Synchronisation automatique SumUp
           </h3>
           
