@@ -35,7 +35,7 @@ const SimpleServerDashboard = () => {
   // Récupérer les produits
   const fetchProducts = async () => {
     try {
-      const response = await axios.get('/api/products/public');
+      const response = await axios.get('/api/products');
       setProducts(response.data.products);
       setFilteredProducts(response.data.products);
       
@@ -77,6 +77,7 @@ const SimpleServerDashboard = () => {
   // Écouter les mises à jour en temps réel
   useEffect(() => {
     const unsubscribeUpdate = onProductUpdate((updatedProduct) => {
+      console.log('🔄 Interface serveur: Produit mis à jour', updatedProduct);
       setProducts(prev => prev.map(product => 
         product.id === updatedProduct.id ? updatedProduct : product
       ));

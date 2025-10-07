@@ -24,7 +24,7 @@ const BeerExchangeDisplay = () => {
   // Récupérer les produits
   const fetchProducts = async () => {
     try {
-      const response = await axios.get('/api/products/public');
+      const response = await axios.get('/api/products');
       const productsWithChanges = response.data.products
         .filter(product => product && product.id && product.name && product.currentPrice !== null && product.currentPrice !== undefined)
         .map(product => ({
@@ -45,6 +45,7 @@ const BeerExchangeDisplay = () => {
   // Écouter les mises à jour en temps réel
   useEffect(() => {
     const unsubscribeUpdate = onProductUpdate((updatedProduct) => {
+      console.log('🔄 Interface publique: Produit mis à jour', updatedProduct);
       if (!updatedProduct || !updatedProduct.id || updatedProduct.currentPrice === null || updatedProduct.currentPrice === undefined) {
         return;
       }

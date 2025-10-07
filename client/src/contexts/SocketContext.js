@@ -14,6 +14,19 @@ export const SocketProvider = ({ children }) => {
     newSocket.on('connect', () => {
       console.log('🔌 Connecté au serveur Socket.io');
       setIsConnected(true);
+      
+      // Rejoindre les rooms selon l'interface
+      const currentPath = window.location.pathname;
+      if (currentPath.includes('/admin')) {
+        newSocket.emit('join-room', 'admin');
+        console.log('🏛️ Rejoint la room admin');
+      } else if (currentPath.includes('/server')) {
+        newSocket.emit('join-room', 'servers');
+        console.log('🍺 Rejoint la room servers');
+      } else {
+        newSocket.emit('join-room', 'public');
+        console.log('🌐 Rejoint la room public');
+      }
     });
 
     newSocket.on('disconnect', () => {

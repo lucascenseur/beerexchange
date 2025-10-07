@@ -52,9 +52,24 @@ router.get('/', async (req, res) => {
       order: [['category', 'ASC'], ['name', 'ASC']]
     });
     
+    // Formater les produits de la même manière que l'API publique
+    const formattedProducts = products.map(product => ({
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      category: product.category,
+      currentPrice: parseFloat(product.currentPrice),
+      stock: product.stock,
+      salesCount: product.salesCount,
+      isActive: product.isActive,
+      image: product.image,
+      basePrice: parseFloat(product.basePrice),
+      initialStock: product.initialStock
+    }));
+    
     res.json({
-      products,
-      count: products.length
+      products: formattedProducts,
+      count: formattedProducts.length
     });
   } catch (error) {
     console.error('Erreur récupération produits:', error);
@@ -154,7 +169,11 @@ router.put('/:id', async (req, res) => {
     // Émettre l'événement Socket.io pour mise à jour temps réel
     const io = req.app.get('io');
     if (io) {
+      console.log(`📡 Émission Socket.io: product-updated pour ${product.name}`);
       io.emit('product-updated', product);
+      io.to('public').emit('product-updated', product);
+      io.to('servers').emit('product-updated', product);
+      io.to('admin').emit('product-updated', product);
     }
     
     res.json({
