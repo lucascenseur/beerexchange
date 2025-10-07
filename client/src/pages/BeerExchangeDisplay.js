@@ -13,6 +13,11 @@ const BeerExchangeDisplay = () => {
   const [salesLogs, setSalesLogs] = useState([]);
   const [processedSales, setProcessedSales] = useState(new Set());
   const [productSaleAnimations, setProductSaleAnimations] = useState([]);
+  const [dailyStats, setDailyStats] = useState({
+    totalSales: 0,
+    totalRevenue: 0,
+    topProducts: []
+  });
 
   const { onProductUpdate, onProductCreated, onProductDeleted } = useSocket();
 
@@ -98,6 +103,29 @@ const BeerExchangeDisplay = () => {
       console.error('Erreur récupération historique prix:', error);
       return [];
     }
+  };
+
+  // Calculer les statistiques quotidiennes
+  const calculateDailyStats = (products) => {
+    const totalSales = products.reduce((sum, product) => sum + (product.salesCount || 0), 0);
+    const totalRevenue = products.reduce((sum, product) => {
+      const sales = product.salesCount || 0;
+      const price = parseFloat(product.currentPrice || 0);
+      return sum + (sales * price);
+    }, 0);
+
+    // Top 3 des produits les plus vendus
+    const topProducts = products
+      .filter(product => (product.salesCount || 0) > 0)
+      .sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0))
+      .slice(0, 3)
+      .map(product => ({
+        name: product.name,
+        sales: product.salesCount || 0,
+        revenue: (product.salesCount || 0) * parseFloat(product.currentPrice || 0)
+      }));
+
+    return { totalSales, totalRevenue, topProducts };
   };
 
   // Générer un historique de prix basé sur les vraies données (1 heure)
@@ -232,6 +260,10 @@ const BeerExchangeDisplay = () => {
       
       setProducts(productsWithChanges);
       
+      // Calculer les statistiques quotidiennes
+      const stats = calculateDailyStats(productsWithChanges);
+      setDailyStats(stats);
+      
       // Générer l'historique des prix pour chaque produit basé sur les vraies ventes
       const historyData = {};
       productsWithChanges.forEach(product => {
@@ -257,77 +289,85 @@ const BeerExchangeDisplay = () => {
         return;
       }
       
-      setProducts(prev => prev.map(product => {
-        if (product && product.id === updatedProduct.id) {
-          const currentPrice = parseFloat(product.currentPrice || 0);
-          const newPrice = parseFloat(updatedProduct.currentPrice || 0);
-          const basePrice = parseFloat(product.basePrice || newPrice);
-          const priceChange = newPrice - currentPrice;
-          
-          // Détecter une vente (augmentation du salesCount)
-          const currentSales = product.salesCount || 0;
-          const newSales = updatedProduct.salesCount || 0;
-          const salesIncrease = newSales - currentSales;
-          
-          if (salesIncrease > 0) {
-            // Créer un identifiant unique pour cette vente basé sur le timestamp
-            const now = Date.now();
-            const saleId = `${product.id}-${newSales}-${now}`;
+      setProducts(prev => {
+        const updatedProducts = prev.map(product => {
+          if (product && product.id === updatedProduct.id) {
+            const currentPrice = parseFloat(product.currentPrice || 0);
+            const newPrice = parseFloat(updatedProduct.currentPrice || 0);
+            const basePrice = parseFloat(product.basePrice || newPrice);
+            const priceChange = newPrice - currentPrice;
             
-            // Vérifier si cette vente a déjà été traitée récemment (dans les 3 dernières secondes)
-            const recentSales = Array.from(processedSales).filter(id => {
-              const parts = id.split('-');
-              const productId = parts[0];
-              const salesCount = parseInt(parts[1]);
-              const timestamp = parseInt(parts[2]);
-              return productId === product.id.toString() && 
-                     salesCount === newSales && 
-                     (now - timestamp) < 3000; // 3 secondes
-            });
+            // Détecter une vente (augmentation du salesCount)
+            const currentSales = product.salesCount || 0;
+            const newSales = updatedProduct.salesCount || 0;
+            const salesIncrease = newSales - currentSales;
             
-            if (recentSales.length === 0) {
-              // Ajouter un log de vente
-              addSalesLog(product.name, salesIncrease, newPrice);
-              // Ajouter une animation sur le produit
-              addProductSaleAnimation(product.id, product.name, salesIncrease, newPrice);
-              console.log(`🛒 Vente détectée: ${salesIncrease}x ${product.name} à ${newPrice}€`);
+            if (salesIncrease > 0) {
+              // Créer un identifiant unique pour cette vente basé sur le timestamp
+              const now = Date.now();
+              const saleId = `${product.id}-${newSales}-${now}`;
               
-              // Marquer cette vente comme traitée
-              setProcessedSales(prev => {
-                const newSet = new Set(prev);
-                newSet.add(saleId);
-                // Garder seulement les 50 dernières ventes pour éviter une accumulation
-                if (newSet.size > 50) {
-                  const array = Array.from(newSet);
-                  return new Set(array.slice(-50));
-                }
-                return newSet;
+              // Vérifier si cette vente a déjà été traitée récemment (dans les 3 dernières secondes)
+              const recentSales = Array.from(processedSales).filter(id => {
+                const parts = id.split('-');
+                const productId = parts[0];
+                const salesCount = parseInt(parts[1]);
+                const timestamp = parseInt(parts[2]);
+                return productId === product.id.toString() && 
+                       salesCount === newSales && 
+                       (now - timestamp) < 3000; // 3 secondes
               });
+              
+              if (recentSales.length === 0) {
+                // Ajouter un log de vente
+                addSalesLog(product.name, salesIncrease, newPrice);
+                // Ajouter une animation sur le produit
+                addProductSaleAnimation(product.id, product.name, salesIncrease, newPrice);
+                console.log(`🛒 Vente détectée: ${salesIncrease}x ${product.name} à ${newPrice}€`);
+                
+                // Marquer cette vente comme traitée
+                setProcessedSales(prev => {
+                  const newSet = new Set(prev);
+                  newSet.add(saleId);
+                  // Garder seulement les 50 dernières ventes pour éviter une accumulation
+                  if (newSet.size > 50) {
+                    const array = Array.from(newSet);
+                    return new Set(array.slice(-50));
+                  }
+                  return newSet;
+                });
+              }
             }
+            
+            // Animation de changement de prix
+            setPriceChanges(prev => ({
+              ...prev,
+              [product.id]: { change: priceChange, timestamp: Date.now() }
+            }));
+
+            // Mettre à jour l'historique des prix
+            setPriceHistory(prev => ({
+              ...prev,
+              [product.id]: generatePriceHistory(newPrice, product.basePrice || newPrice, updatedProduct.salesCount || 0)
+            }));
+
+            return {
+              ...updatedProduct,
+              currentPrice: newPrice,
+              previousPrice: currentPrice,
+              basePrice: basePrice,
+              priceChange
+            };
           }
-          
-          // Animation de changement de prix
-          setPriceChanges(prev => ({
-            ...prev,
-            [product.id]: { change: priceChange, timestamp: Date.now() }
-          }));
+          return product;
+        });
 
-          // Mettre à jour l'historique des prix
-          setPriceHistory(prev => ({
-            ...prev,
-            [product.id]: generatePriceHistory(newPrice, product.basePrice || newPrice, updatedProduct.salesCount || 0)
-          }));
+        // Recalculer les statistiques après mise à jour
+        const stats = calculateDailyStats(updatedProducts);
+        setDailyStats(stats);
 
-          return {
-            ...updatedProduct,
-            currentPrice: newPrice,
-            previousPrice: currentPrice,
-            basePrice: basePrice,
-            priceChange
-          };
-        }
-        return product;
-      }));
+        return updatedProducts;
+      });
     });
 
     const unsubscribeCreate = onProductCreated((newProduct) => {
@@ -393,28 +433,63 @@ const BeerExchangeDisplay = () => {
   return (
     <div className="h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-8 py-4 border-b border-slate-700">
-        {/* 3iS VERTIGO */}
-        <div className="flex items-center space-x-3">
+      <div className="px-8 py-4 border-b border-slate-700">
+        {/* Ligne principale */}
+        <div className="flex items-center justify-between mb-3">
+          {/* 3iS VERTIGO */}
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <span className="text-white text-lg font-bold">3iS VERTIGO</span>
+              <Beer className="w-5 h-5 text-green-400" />
+            </div>
+          </div>
+
+          {/* Title */}
+          <div className="text-center">
+            <h1 className="text-4xl font-black text-white tracking-wider">
+              BEER EXCHANGE
+            </h1>
+          </div>
+
+          {/* Time */}
           <div className="flex items-center space-x-2">
-            <span className="text-white text-lg font-bold">3iS VERTIGO</span>
-            <Beer className="w-5 h-5 text-green-400" />
+            <Clock className="w-5 h-5 text-orange-400" />
+            <span className="text-orange-400 text-2xl font-mono font-bold">
+              {formatTime(currentTime)}
+            </span>
           </div>
         </div>
 
-        {/* Title */}
-        <div className="text-center">
-          <h1 className="text-4xl font-black text-white tracking-wider">
-            BEER EXCHANGE
-          </h1>
-        </div>
+        {/* Statistiques en temps réel */}
+        <div className="flex items-center justify-center space-x-8">
+          {/* Total des ventes */}
+          <div className="flex items-center space-x-2 bg-green-500/20 border border-green-500/40 rounded-lg px-4 py-2">
+            <span className="text-green-400 text-sm font-medium">📊 Ventes:</span>
+            <span className="text-green-300 text-lg font-bold">{dailyStats.totalSales}</span>
+          </div>
 
-        {/* Time */}
-        <div className="flex items-center space-x-2">
-          <Clock className="w-5 h-5 text-orange-400" />
-          <span className="text-orange-400 text-2xl font-mono font-bold">
-            {formatTime(currentTime)}
-          </span>
+          {/* Chiffre d'affaires */}
+          <div className="flex items-center space-x-2 bg-blue-500/20 border border-blue-500/40 rounded-lg px-4 py-2">
+            <span className="text-blue-400 text-sm font-medium">💰 CA:</span>
+            <span className="text-blue-300 text-lg font-bold">{dailyStats.totalRevenue.toFixed(2)}€</span>
+          </div>
+
+          {/* Top 3 produits */}
+          {dailyStats.topProducts.length > 0 && (
+            <div className="flex items-center space-x-2 bg-orange-500/20 border border-orange-500/40 rounded-lg px-4 py-2">
+              <span className="text-orange-400 text-sm font-medium">🏆 Top:</span>
+              <div className="flex items-center space-x-2">
+                {dailyStats.topProducts.slice(0, 3).map((product, index) => (
+                  <div key={index} className="flex items-center space-x-1">
+                    <span className="text-orange-300 text-xs">
+                      {index + 1}. {product.name.split(' ')[0]}
+                    </span>
+                    <span className="text-orange-200 text-xs">({product.sales})</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
