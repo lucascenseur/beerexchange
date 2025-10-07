@@ -13,7 +13,7 @@ const BeerExchangeDisplay = () => {
   const [priceHistory, setPriceHistory] = useState({});
   const [salesLogs, setSalesLogs] = useState([]);
   const [processedSales, setProcessedSales] = useState(new Set());
-  const [productSaleAnimations, setProductSaleAnimations] = useState({});
+  const [productSaleAnimations, setProductSaleAnimations] = useState([]);
 
   const { onProductUpdate, onProductCreated, onProductDeleted } = useSocket();
 
@@ -30,12 +30,13 @@ const BeerExchangeDisplay = () => {
     };
     
     setSalesLogs(prev => {
-      // Vérifier si un log similaire existe déjà dans les 3 dernières secondes
+      // Vérifier si un log similaire existe déjà dans les 5 dernières secondes
       const recentLogs = prev.filter(existingLog => {
         const timeDiff = now - existingLog.timestamp.getTime();
         return existingLog.productName === productName && 
                existingLog.quantity === quantity && 
-               timeDiff < 3000; // 3 secondes
+               Math.abs(existingLog.price - parseFloat(price || 0)) < 0.01 && // Même prix (tolérance 1 centime)
+               timeDiff < 5000; // 5 secondes
       });
       
       // Si aucun log similaire récent, ajouter le nouveau
@@ -51,29 +52,42 @@ const BeerExchangeDisplay = () => {
   // Ajouter une animation de vente sur un produit spécifique
   const addProductSaleAnimation = (productId, productName, quantity, price) => {
     const animationId = `${productId}-${Date.now()}`;
+    const now = Date.now();
     
-    setProductSaleAnimations(prev => ({
-      ...prev,
-      [productId]: {
-        id: animationId,
-        productName,
-        quantity,
-        price: parseFloat(price || 0),
-        timestamp: Date.now(),
-        visible: true
-      }
-    }));
-
-    // Supprimer l'animation après 3 secondes
-    setTimeout(() => {
-      setProductSaleAnimations(prev => {
-        const newAnimations = { ...prev };
-        if (newAnimations[productId]?.id === animationId) {
-          delete newAnimations[productId];
-        }
+    setProductSaleAnimations(prev => {
+      // Vérifier si une animation similaire existe déjà pour ce produit dans les 2 dernières secondes
+      const recentAnimations = prev.filter(anim => 
+        anim.productId === productId && 
+        (now - anim.timestamp) < 2000 // 2 secondes
+      );
+      
+      // Si aucune animation récente, ajouter la nouvelle
+      if (recentAnimations.length === 0) {
+        const newAnimation = {
+          id: animationId,
+          productId,
+          productName,
+          quantity,
+          price: parseFloat(price || 0),
+          timestamp: now,
+          visible: true
+        };
+        
+        // Ajouter à la fin de la liste et garder seulement les 5 dernières
+        const newAnimations = [...prev, newAnimation].slice(-5);
+        
+        // Supprimer cette animation après 3 secondes
+        setTimeout(() => {
+          setProductSaleAnimations(current => 
+            current.filter(anim => anim.id !== animationId)
+          );
+        }, 3000);
+        
         return newAnimations;
-      });
-    }, 3000);
+      }
+      
+      return prev; // Ne pas ajouter de doublon
+    });
   };
 
   // Récupérer l'historique réel des prix depuis l'API
@@ -261,12 +275,15 @@ const BeerExchangeDisplay = () => {
             const now = Date.now();
             const saleId = `${product.id}-${newSales}-${now}`;
             
-            // Vérifier si cette vente a déjà été traitée récemment (dans les 5 dernières secondes)
+            // Vérifier si cette vente a déjà été traitée récemment (dans les 3 dernières secondes)
             const recentSales = Array.from(processedSales).filter(id => {
               const parts = id.split('-');
               const productId = parts[0];
+              const salesCount = parseInt(parts[1]);
               const timestamp = parseInt(parts[2]);
-              return productId === product.id.toString() && (now - timestamp) < 5000; // 5 secondes
+              return productId === product.id.toString() && 
+                     salesCount === newSales && 
+                     (now - timestamp) < 3000; // 3 secondes
             });
             
             if (recentSales.length === 0) {
@@ -427,25 +444,27 @@ const BeerExchangeDisplay = () => {
                   </div>
                   
                   {/* Animation de vente */}
-                  {productSaleAnimations[product.id] && (
-                    <motion.div
-                      key={productSaleAnimations[product.id].id}
-                      initial={{ scale: 0.8, opacity: 0, x: -20 }}
-                      animate={{ scale: 1, opacity: 1, x: 0 }}
-                      exit={{ scale: 0.8, opacity: 0, x: 20 }}
-                      transition={{ duration: 0.4, ease: "easeOut" }}
-                      className="bg-green-500/20 border border-green-500/40 rounded-lg px-3 py-2 mr-3"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <span className="text-green-400 text-sm font-bold">
-                          +{productSaleAnimations[product.id].quantity}
-                        </span>
-                        <span className="text-green-300 text-xs">
-                          {productSaleAnimations[product.id].price.toFixed(2)}€
-                        </span>
-                      </div>
-                    </motion.div>
-                  )}
+                  {productSaleAnimations
+                    .filter(anim => anim.productId === product.id)
+                    .map(animation => (
+                      <motion.div
+                        key={animation.id}
+                        initial={{ scale: 0.8, opacity: 0, x: -20 }}
+                        animate={{ scale: 1, opacity: 1, x: 0 }}
+                        exit={{ scale: 0.8, opacity: 0, x: 20 }}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        className="bg-green-500/20 border border-green-500/40 rounded-lg px-3 py-2 mr-3"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <span className="text-green-400 text-sm font-bold">
+                            +{animation.quantity}
+                          </span>
+                          <span className="text-green-300 text-xs">
+                            {animation.price.toFixed(2)}€
+                          </span>
+                        </div>
+                      </motion.div>
+                    ))}
                   
                   <div className="flex items-center space-x-3">
                     <motion.div
@@ -516,25 +535,27 @@ const BeerExchangeDisplay = () => {
                   </div>
                   
                   {/* Animation de vente */}
-                  {productSaleAnimations[product.id] && (
-                    <motion.div
-                      key={productSaleAnimations[product.id].id}
-                      initial={{ scale: 0.8, opacity: 0, x: -20 }}
-                      animate={{ scale: 1, opacity: 1, x: 0 }}
-                      exit={{ scale: 0.8, opacity: 0, x: 20 }}
-                      transition={{ duration: 0.4, ease: "easeOut" }}
-                      className="bg-green-500/20 border border-green-500/40 rounded-lg px-3 py-2 mr-3"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <span className="text-green-400 text-sm font-bold">
-                          +{productSaleAnimations[product.id].quantity}
-                        </span>
-                        <span className="text-green-300 text-xs">
-                          {productSaleAnimations[product.id].price.toFixed(2)}€
-                        </span>
-                      </div>
-                    </motion.div>
-                  )}
+                  {productSaleAnimations
+                    .filter(anim => anim.productId === product.id)
+                    .map(animation => (
+                      <motion.div
+                        key={animation.id}
+                        initial={{ scale: 0.8, opacity: 0, x: -20 }}
+                        animate={{ scale: 1, opacity: 1, x: 0 }}
+                        exit={{ scale: 0.8, opacity: 0, x: 20 }}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        className="bg-green-500/20 border border-green-500/40 rounded-lg px-3 py-2 mr-3"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <span className="text-green-400 text-sm font-bold">
+                            +{animation.quantity}
+                          </span>
+                          <span className="text-green-300 text-xs">
+                            {animation.price.toFixed(2)}€
+                          </span>
+                        </div>
+                      </motion.div>
+                    ))}
                   
                   <div className="flex items-center space-x-3">
                     <motion.div
