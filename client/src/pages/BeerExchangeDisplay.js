@@ -18,8 +18,9 @@ const BeerExchangeDisplay = () => {
 
   // Ajouter un log de vente
   const addSalesLog = (productName, quantity, price) => {
+    const now = Date.now();
     const log = {
-      id: Date.now(),
+      id: `${productName}-${quantity}-${now}`, // ID unique basé sur le contenu
       productName,
       quantity,
       price: parseFloat(price || 0),
@@ -28,8 +29,21 @@ const BeerExchangeDisplay = () => {
     };
     
     setSalesLogs(prev => {
-      const newLogs = [log, ...prev].slice(0, 10); // Garder seulement les 10 derniers logs
-      return newLogs;
+      // Vérifier si un log similaire existe déjà dans les 3 dernières secondes
+      const recentLogs = prev.filter(existingLog => {
+        const timeDiff = now - existingLog.timestamp.getTime();
+        return existingLog.productName === productName && 
+               existingLog.quantity === quantity && 
+               timeDiff < 3000; // 3 secondes
+      });
+      
+      // Si aucun log similaire récent, ajouter le nouveau
+      if (recentLogs.length === 0) {
+        const newLogs = [log, ...prev].slice(0, 10); // Garder seulement les 10 derniers logs
+        return newLogs;
+      }
+      
+      return prev; // Ne pas ajouter de doublon
     });
   };
 
@@ -214,11 +228,19 @@ const BeerExchangeDisplay = () => {
           const salesIncrease = newSales - currentSales;
           
           if (salesIncrease > 0) {
-            // Créer un identifiant unique pour cette vente
-            const saleId = `${product.id}-${newSales}-${newPrice.toFixed(2)}`;
+            // Créer un identifiant unique pour cette vente basé sur le timestamp
+            const now = Date.now();
+            const saleId = `${product.id}-${newSales}-${now}`;
             
-            // Vérifier si cette vente a déjà été traitée
-            if (!processedSales.has(saleId)) {
+            // Vérifier si cette vente a déjà été traitée récemment (dans les 5 dernières secondes)
+            const recentSales = Array.from(processedSales).filter(id => {
+              const parts = id.split('-');
+              const productId = parts[0];
+              const timestamp = parseInt(parts[2]);
+              return productId === product.id.toString() && (now - timestamp) < 5000; // 5 secondes
+            });
+            
+            if (recentSales.length === 0) {
               // Ajouter un log de vente
               addSalesLog(product.name, salesIncrease, newPrice);
               console.log(`🛒 Vente détectée: ${salesIncrease}x ${product.name} à ${newPrice}€`);
