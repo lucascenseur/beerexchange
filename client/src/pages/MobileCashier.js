@@ -8,6 +8,10 @@ import {
   Check, 
   X, 
   Beer,
+  Wine,
+  Coffee,
+  Droplets,
+  Utensils,
   CreditCard,
   Calculator,
   Receipt
@@ -188,6 +192,22 @@ const MobileCashier = () => {
     }
   };
 
+  // Fonction pour obtenir l'icône selon la catégorie
+  const getCategoryIcon = (category) => {
+    switch (category) {
+      case 'beer':
+        return <Beer className="w-6 h-6 text-amber-400" />;
+      case 'cocktail':
+        return <Wine className="w-6 h-6 text-purple-400" />;
+      case 'soft':
+        return <Droplets className="w-6 h-6 text-blue-400" />;
+      case 'snack':
+        return <Utensils className="w-6 h-6 text-orange-400" />;
+      default:
+        return <Coffee className="w-6 h-6 text-gray-400" />;
+    }
+  };
+
   // Grouper les produits par catégorie
   const productsByCategory = products.reduce((acc, product) => {
     const category = product.category || 'other';
@@ -265,7 +285,7 @@ const MobileCashier = () => {
                     className="bg-slate-700/50 hover:bg-slate-600/50 border border-slate-600 rounded-lg p-4 text-left transition-colors duration-200"
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <Beer className="w-6 h-6 text-green-400" />
+                      {getCategoryIcon(product.category)}
                       <span className="text-green-400 font-bold text-lg">
                         {(product.currentPrice || 0).toFixed(2)}€
                       </span>
@@ -367,7 +387,10 @@ const MobileCashier = () => {
                       className="bg-slate-700/50 rounded-lg p-3 border border-slate-600"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-white font-medium text-sm">{item.name}</h3>
+                        <div className="flex items-center gap-2">
+                          {getCategoryIcon(item.category)}
+                          <h3 className="text-white font-medium text-sm">{item.name}</h3>
+                        </div>
                         <button
                           onClick={() => removeFromCart(item.id)}
                           className="text-red-400 hover:text-red-300"
