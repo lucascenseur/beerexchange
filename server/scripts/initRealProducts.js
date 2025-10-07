@@ -169,9 +169,9 @@ async function initRealProducts() {
     await sequelize.authenticate();
     console.log('✅ Connexion à MariaDB réussie');
 
-    // Supprimer tous les produits existants
-    await Product.destroy({ where: {} });
+    // Supprimer tous les produits existants (d'abord l'historique, puis les produits)
     await PriceHistory.destroy({ where: {} });
+    await Product.destroy({ where: {} });
     console.log('🗑️  Anciens produits supprimés');
 
     // Créer les nouveaux produits
