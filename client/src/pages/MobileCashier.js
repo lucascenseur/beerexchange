@@ -293,21 +293,18 @@ const MobileCashier = () => {
                       </span>
                     </div>
                     
-                    <h4 className="text-white font-medium text-sm mb-1 line-clamp-2">
+                    <h4 className="text-white font-bold text-base mb-2 line-clamp-2">
                       {product.name}
                     </h4>
                     
                     {product.description && (
-                      <p className="text-slate-400 text-xs line-clamp-2">
+                      <p className="text-slate-400 text-xs line-clamp-2 mb-2">
                         {product.description}
                       </p>
                     )}
                     
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="text-slate-500 text-xs">
-                        Stock: {product.stock || '∞'}
-                      </span>
-                      <Plus className="w-5 h-5 text-green-400" />
+                    <div className="flex items-center justify-end">
+                      <Plus className="w-6 h-6 text-green-400" />
                     </div>
                   </motion.button>
                 ))}
@@ -388,35 +385,38 @@ const MobileCashier = () => {
                       exit={{ opacity: 0, y: -20 }}
                       className="bg-slate-700/50 rounded-lg p-3 border border-slate-600"
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
                           {getCategoryIcon(item.category)}
-                          <h3 className="text-white font-medium text-sm">{item.name}</h3>
+                          <div>
+                            <h3 className="text-white font-bold text-base">{item.name}</h3>
+                            <p className="text-slate-400 text-xs">Unité</p>
+                          </div>
                         </div>
                         <button
                           onClick={() => removeFromCart(item.id)}
-                          className="text-red-400 hover:text-red-300"
+                          className="text-red-400 hover:text-red-300 p-1"
                         >
-                          <X className="w-4 h-4" />
+                          <X className="w-5 h-5" />
                         </button>
                       </div>
                       
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-3">
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="w-8 h-8 bg-red-500 text-white rounded flex items-center justify-center text-sm"
+                            className="w-10 h-10 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center justify-center transition-colors duration-200"
                           >
-                            <Minus className="w-4 h-4" />
+                            <Minus className="w-5 h-5" />
                           </button>
-                          <span className="text-white font-bold text-sm w-8 text-center">
+                          <span className="text-white font-bold text-lg w-12 text-center bg-slate-600 rounded-lg py-2">
                             {item.quantity}
                           </span>
                           <button
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="w-8 h-8 bg-green-500 text-white rounded flex items-center justify-center text-sm"
+                            className="w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-lg flex items-center justify-center transition-colors duration-200"
                           >
-                            <Plus className="w-4 h-4" />
+                            <Plus className="w-5 h-5" />
                           </button>
                         </div>
                         
