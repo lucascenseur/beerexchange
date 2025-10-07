@@ -6,9 +6,9 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const { sequelize, testConnection } = require('./config/database');
+const priceEngine = require('./utils/priceEngine');
 require('dotenv').config();
 
-const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const saleRoutes = require('./routes/sales');
 const adminRoutes = require('./routes/admin');
@@ -58,7 +58,6 @@ const initializeDatabase = async () => {
 initializeDatabase();
 
 // Routes
-app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/admin', adminRoutes);
@@ -110,4 +109,20 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🚀 Serveur Beer Exchange démarré sur le port ${PORT}`);
   console.log(`🌐 Environnement: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Démarrer le moteur de prix
+  priceEngine.start(io);
+});
+
+// Arrêter le moteur de prix à l'arrêt du serveur
+process.on('SIGINT', () => {
+  console.log('\n🛑 Arrêt du serveur...');
+  priceEngine.stop();
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('\n🛑 Arrêt du serveur...');
+  priceEngine.stop();
+  process.exit(0);
 });

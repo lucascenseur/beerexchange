@@ -1,29 +1,23 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
 
 // Pages
-import PublicDisplay from './pages/PublicDisplay';
-import PublicDisplayCompact from './pages/PublicDisplayCompact';
+import BeerExchangeDisplay from './pages/BeerExchangeDisplay';
 import SimpleLogin from './pages/SimpleLogin';
 import SimpleServerDashboard from './pages/SimpleServerDashboard';
 import SimpleAdminDashboard from './pages/SimpleAdminDashboard';
 
-// Composants (non utilisés dans cette version simplifiée)
-
 function App() {
   return (
-    <AuthProvider>
-      <SocketProvider>
+    <SocketProvider>
         <Router>
           <div className="App min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
             <Routes>
               {/* Interface publique - accessible sans authentification */}
-              <Route path="/" element={<PublicDisplayCompact />} />
-              <Route path="/public" element={<PublicDisplayCompact />} />
-              <Route path="/public/full" element={<PublicDisplay />} />
+              <Route path="/" element={<BeerExchangeDisplay />} />
+              <Route path="/public" element={<BeerExchangeDisplay />} />
               
               {/* Interface de connexion simple */}
               <Route path="/login" element={<SimpleLogin />} />
@@ -74,7 +68,6 @@ function App() {
           </div>
         </Router>
       </SocketProvider>
-    </AuthProvider>
   );
 }
 

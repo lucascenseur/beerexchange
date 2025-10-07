@@ -1,115 +1,69 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
-import { useAuth } from './AuthContext';
 
 const SocketContext = createContext();
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
-  const { isAuthenticated, user } = useAuth();
 
   useEffect(() => {
-    // Se connecter au socket seulement si l'utilisateur est authentifié
-    if (isAuthenticated && user) {
-      const newSocket = io(process.env.REACT_APP_SOCKET_URL || '', {
-        auth: {
-          token: localStorage.getItem('token')
-        }
-      });
+    // Se connecter au socket sans authentification
+    const newSocket = io(process.env.REACT_APP_SOCKET_URL || '');
 
-      newSocket.on('connect', () => {
-        console.log('🔌 Connecté au serveur Socket.io');
-        setIsConnected(true);
-        
-        // Rejoindre les rooms appropriées selon le rôle
-        if (user.role === 'admin') {
-          newSocket.emit('join-room', 'admin');
-          newSocket.emit('join-room', 'servers');
-        } else if (user.role === 'server') {
-          newSocket.emit('join-room', 'servers');
-        }
-      });
+    newSocket.on('connect', () => {
+      console.log('🔌 Connecté au serveur Socket.io');
+      setIsConnected(true);
+    });
 
-      newSocket.on('disconnect', () => {
-        console.log('🔌 Déconnecté du serveur Socket.io');
-        setIsConnected(false);
-      });
+    newSocket.on('disconnect', () => {
+      console.log('🔌 Déconnecté du serveur Socket.io');
+      setIsConnected(false);
+    });
 
-      newSocket.on('connect_error', (error) => {
-        console.error('❌ Erreur de connexion Socket.io:', error);
-        setIsConnected(false);
-      });
+    newSocket.on('connect_error', (error) => {
+      console.error('❌ Erreur de connexion Socket.io:', error);
+      setIsConnected(false);
+    });
 
-      setSocket(newSocket);
+    setSocket(newSocket);
 
-      return () => {
-        newSocket.close();
-      };
-    } else {
-      // Pour l'interface publique, se connecter sans authentification
-      const publicSocket = io(process.env.REACT_APP_SOCKET_URL || '');
-      
-      publicSocket.on('connect', () => {
-        console.log('🔌 Connecté au serveur Socket.io (public)');
-        setIsConnected(true);
-        publicSocket.emit('join-room', 'public');
-      });
+    return () => {
+      newSocket.close();
+    };
+  }, []);
 
-      publicSocket.on('disconnect', () => {
-        console.log('🔌 Déconnecté du serveur Socket.io (public)');
-        setIsConnected(false);
-      });
-
-      setSocket(publicSocket);
-
-      return () => {
-        publicSocket.close();
-      };
-    }
-  }, [isAuthenticated, user]);
-
-  // Fonction pour écouter les mises à jour de produits
+  // Fonctions pour écouter les événements
   const onProductUpdate = (callback) => {
     if (socket) {
       socket.on('product-updated', callback);
       return () => socket.off('product-updated', callback);
     }
-    return () => {}; // Retourner une fonction vide si pas de socket
+    return () => {};
   };
 
-  // Fonction pour écouter la création de produits
   const onProductCreated = (callback) => {
     if (socket) {
       socket.on('product-created', callback);
       return () => socket.off('product-created', callback);
     }
-    return () => {}; // Retourner une fonction vide si pas de socket
+    return () => {};
   };
 
-  // Fonction pour écouter la suppression de produits
   const onProductDeleted = (callback) => {
     if (socket) {
       socket.on('product-deleted', callback);
       return () => socket.off('product-deleted', callback);
     }
-    return () => {}; // Retourner une fonction vide si pas de socket
+    return () => {};
   };
 
-  // Fonction pour écouter les nouvelles ventes
   const onSaleCreated = (callback) => {
     if (socket) {
       socket.on('sale-created', callback);
       return () => socket.off('sale-created', callback);
     }
-    return () => {}; // Retourner une fonction vide si pas de socket
-  };
-
-  // Fonction pour émettre un événement
-  const emit = (event, data) => {
-    if (socket) {
-      socket.emit(event, data);
-    }
+    return () => {};
   };
 
   const value = {
@@ -118,8 +72,7 @@ export const SocketProvider = ({ children }) => {
     onProductUpdate,
     onProductCreated,
     onProductDeleted,
-    onSaleCreated,
-    emit
+    onSaleCreated
   };
 
   return (
@@ -136,5 +89,3 @@ export const useSocket = () => {
   }
   return context;
 };
-
-export default SocketContext;
