@@ -22,6 +22,8 @@ const CashierInterface = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [serverName, setServerName] = useState('Serveur');
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showProductModal, setShowProductModal] = useState(false);
 
   const { onProductUpdate } = useSocket();
 
@@ -45,20 +47,28 @@ const CashierInterface = () => {
     }
   };
 
-  // Ajouter un produit au panier
-  const addToCart = (product) => {
+  // Ouvrir le modal de sélection de produit
+  const openProductModal = (product) => {
+    setSelectedProduct(product);
+    setShowProductModal(true);
+  };
+
+  // Ajouter un produit au panier avec quantité spécifique
+  const addToCart = (product, quantity = 1) => {
     setCart(prev => {
       const existingItem = prev.find(item => item.id === product.id);
       if (existingItem) {
         return prev.map(item =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: item.quantity + quantity }
             : item
         );
       } else {
-        return [...prev, { ...product, quantity: 1 }];
+        return [...prev, { ...product, quantity }];
       }
     });
+    setShowProductModal(false);
+    setSelectedProduct(null);
   };
 
   // Modifier la quantité d'un produit
@@ -311,7 +321,7 @@ const CashierInterface = () => {
                       key={product.id}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => addToCart(product)}
+                      onClick={() => openProductModal(product)}
                       className="bg-slate-700/50 hover:bg-slate-600/50 border border-slate-600 rounded-lg p-3 text-left transition-colors duration-200"
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -359,6 +369,103 @@ const CashierInterface = () => {
               <Check className="w-5 h-5" />
               <span className="font-bold">Vente validée !</span>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de sélection de produit */}
+      <AnimatePresence>
+        {showProductModal && selectedProduct && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowProductModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-slate-800 rounded-lg p-6 w-full max-w-md border border-slate-600"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-white">Sélectionner la quantité</h3>
+                <button
+                  onClick={() => setShowProductModal(false)}
+                  className="text-slate-400 hover:text-white"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="mb-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <Beer className="w-8 h-8 text-green-400" />
+                  <div>
+                    <h4 className="text-lg font-bold text-white">{selectedProduct.name}</h4>
+                    <p className="text-green-400 font-bold text-xl">
+                      {selectedProduct.currentPrice.toFixed(2)}€
+                    </p>
+                  </div>
+                </div>
+                
+                {selectedProduct.description && (
+                  <p className="text-slate-300 text-sm mb-4">{selectedProduct.description}</p>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-center space-x-4">
+                  <button
+                    onClick={() => addToCart(selectedProduct, 1)}
+                    className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold flex items-center space-x-2"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span>Ajouter 1</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => addToCart(selectedProduct, 2)}
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold flex items-center space-x-2"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span>Ajouter 2</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-center space-x-2">
+                  <button
+                    onClick={() => addToCart(selectedProduct, 3)}
+                    className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold"
+                  >
+                    +3
+                  </button>
+                  <button
+                    onClick={() => addToCart(selectedProduct, 5)}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold"
+                  >
+                    +5
+                  </button>
+                  <button
+                    onClick={() => addToCart(selectedProduct, 10)}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold"
+                  >
+                    +10
+                  </button>
+                </div>
+
+                <div className="border-t border-slate-600 pt-4">
+                  <button
+                    onClick={() => setShowProductModal(false)}
+                    className="w-full py-2 text-slate-400 hover:text-white border border-slate-600 rounded-lg"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
