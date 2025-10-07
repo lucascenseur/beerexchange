@@ -262,13 +262,13 @@ router.post('/sales', async (req, res) => {
     
     // Créer la vente
     const sale = await Sale.create({
-      product_id: parseInt(product_id),
-      product_name: product_name,
+      productId: parseInt(product_id),
+      productName: product_name,
       price: parseFloat(price),
       quantity: parseInt(quantity),
-      total_amount: parseFloat(total_amount),
-      server_id: parseInt(server_id) || 1,
-      server_name: server_name || 'Serveur',
+      totalAmount: parseFloat(total_amount),
+      serverId: parseInt(server_id) || 1,
+      serverName: server_name || 'Serveur',
       notes: notes || `Vente mobile - ${new Date().toLocaleString()}`
     });
     
@@ -285,10 +285,10 @@ router.post('/sales', async (req, res) => {
         message: 'Vente enregistrée avec succès',
         sale: {
           id: sale.id,
-          product_name: sale.product_name,
+          product_name: sale.productName,
           quantity: sale.quantity,
-          total_amount: sale.total_amount,
-          timestamp: sale.created_at
+          total_amount: sale.totalAmount,
+          timestamp: sale.createdAt
         },
         product: {
           id: product.id,
