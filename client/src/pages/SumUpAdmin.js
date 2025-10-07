@@ -219,15 +219,6 @@ const SumUpAdmin = () => {
     }
   };
 
-  // Vérifier le statut de synchronisation
-  const checkSyncStatus = async () => {
-    try {
-      const response = await axios.get('/api/sumup/sync/status');
-      setSyncStatus(response.data);
-    } catch (error) {
-      console.error('Erreur vérification statut sync:', error);
-    }
-  };
 
   useEffect(() => {
     checkConfig();
