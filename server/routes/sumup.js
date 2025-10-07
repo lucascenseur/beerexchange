@@ -1,12 +1,40 @@
 const express = require('express');
-const sumupService = require('../services/sumupServiceDemo');
+const sumupService = require('../services/sumupServiceReal');
 const SumUpToken = require('../models/SumUpToken');
 const syncService = require('../services/syncService');
 const router = express.Router();
 
+// Route pour vérifier la configuration SumUp
+router.get('/config', async (req, res) => {
+  try {
+    const config = sumupService.checkConfiguration();
+    res.json({
+      success: true,
+      config: config,
+      message: config.isConfigured ? 'Configuration SumUp complète' : 'Configuration SumUp incomplète'
+    });
+  } catch (error) {
+    console.error('❌ Erreur vérification config SumUp:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la vérification de la configuration'
+    });
+  }
+});
+
 // Route pour initier l'authentification OAuth
 router.get('/auth', async (req, res) => {
   try {
+    // Vérifier la configuration d'abord
+    const config = sumupService.checkConfiguration();
+    if (!config.isConfigured) {
+      return res.status(400).json({
+        success: false,
+        message: 'Configuration SumUp incomplète. Veuillez configurer SUMUP_CLIENT_ID et SUMUP_CLIENT_SECRET.',
+        config: config
+      });
+    }
+
     const state = req.query.state || 'beer-exchange-auth';
     const authUrl = sumupService.getAuthorizationUrl(state);
     
@@ -83,14 +111,15 @@ router.get('/callback', async (req, res) => {
 router.get('/status', async (req, res) => {
   try {
     const activeToken = await SumUpToken.getActiveToken();
-    const demoStatus = sumupService.getDemoStatus();
+    const serviceStatus = sumupService.getStatus();
     
     if (!activeToken) {
       return res.json({
         authenticated: false,
         message: 'Aucune authentification SumUp active',
-        demoMode: demoStatus.isDemoMode,
-        demoMessage: demoStatus.message
+        isConfigured: serviceStatus.isConfigured,
+        isDemoMode: serviceStatus.isDemoMode,
+        statusMessage: serviceStatus.message
       });
     }
 
@@ -105,8 +134,9 @@ router.get('/status', async (req, res) => {
       },
       expiresAt: new Date(activeToken.created_at.getTime() + (activeToken.expiresIn * 1000)),
       isExpired: isExpired,
-      demoMode: demoStatus.isDemoMode,
-      demoMessage: demoStatus.message
+      isConfigured: serviceStatus.isConfigured,
+      isDemoMode: serviceStatus.isDemoMode,
+      statusMessage: serviceStatus.message
     });
 
   } catch (error) {

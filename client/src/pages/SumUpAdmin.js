@@ -22,7 +22,19 @@ const SumUpAdmin = () => {
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState(null);
+  const [config, setConfig] = useState(null);
   const navigate = useNavigate();
+
+  // Vérifier la configuration SumUp
+  const checkConfig = async () => {
+    try {
+      const response = await axios.get('/api/sumup/config');
+      setConfig(response.data.config);
+    } catch (error) {
+      console.error('Erreur vérification config SumUp:', error);
+      setConfig({ isConfigured: false });
+    }
+  };
 
   // Vérifier le statut d'authentification SumUp
   const checkAuthStatus = async () => {
@@ -104,6 +116,7 @@ const SumUpAdmin = () => {
   };
 
   useEffect(() => {
+    checkConfig();
     checkAuthStatus();
     checkSyncStatus();
   }, []);
@@ -136,14 +149,38 @@ const SumUpAdmin = () => {
           Statut d'Authentification SumUp
         </h3>
         
+        {/* Configuration */}
+        {config && (
+          <div className={`border rounded-lg p-4 mb-4 ${config.isConfigured ? 'bg-green-500/20 border-green-500/30' : 'bg-red-500/20 border-red-500/30'}`}>
+            <div className="flex items-center gap-2">
+              {config.isConfigured ? (
+                <CheckCircle className="w-6 h-6 text-green-400" />
+              ) : (
+                <XCircle className="w-6 h-6 text-red-400" />
+              )}
+              <div>
+                <p className={`font-semibold ${config.isConfigured ? 'text-green-400' : 'text-red-400'}`}>
+                  {config.isConfigured ? '✅ Configuration SumUp' : '❌ Configuration Manquante'}
+                </p>
+                <p className={`text-sm ${config.isConfigured ? 'text-green-300' : 'text-red-300'}`}>
+                  {config.isConfigured 
+                    ? 'Client ID et Secret configurés - Prêt pour l\'authentification' 
+                    : 'Veuillez configurer SUMUP_CLIENT_ID et SUMUP_CLIENT_SECRET dans le fichier .env'
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Mode démo */}
-        {authStatus?.demoMode && (
+        {authStatus?.isDemoMode && (
           <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4 mb-4">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-6 h-6 text-yellow-400" />
               <div>
                 <p className="text-yellow-400 font-semibold">🎭 Mode Démonstration</p>
-                <p className="text-yellow-300 text-sm">{authStatus.demoMessage}</p>
+                <p className="text-yellow-300 text-sm">{authStatus.statusMessage}</p>
               </div>
             </div>
           </div>
