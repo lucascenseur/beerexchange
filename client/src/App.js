@@ -11,8 +11,7 @@ import SimpleLogin from './pages/SimpleLogin';
 import SimpleServerDashboard from './pages/SimpleServerDashboard';
 import SimpleAdminDashboard from './pages/SimpleAdminDashboard';
 
-// Composants
-import ProtectedRoute from './components/ProtectedRoute';
+// Composants (non utilisés dans cette version simplifiée)
 
 function App() {
   return (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Beer, Wine, Coffee, Utensils, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Beer, Wine, Coffee, Utensils } from 'lucide-react';
 import { useSocket } from '../contexts/SocketContext';
 import axios from 'axios';
 
