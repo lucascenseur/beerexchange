@@ -10,7 +10,8 @@ import {
   Search,
   RefreshCw,
   ArrowLeft,
-  ShoppingCart
+  ShoppingCart,
+  Smartphone
 } from 'lucide-react';
 import { useSocket } from '../contexts/SocketContext';
 import axios from 'axios';
@@ -181,6 +182,13 @@ const SimpleServerDashboard = () => {
           >
             <ShoppingCart className="w-4 h-4" />
             <span>Caisse</span>
+          </button>
+          <button
+            onClick={() => navigate('/mobile')}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center space-x-2 transition-colors"
+          >
+            <Smartphone className="w-4 h-4" />
+            <span>Mobile</span>
           </button>
           <button
             onClick={fetchProducts}

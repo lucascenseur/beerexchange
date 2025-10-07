@@ -10,6 +10,7 @@ import SimpleServerDashboard from './pages/SimpleServerDashboard';
 import SimpleAdminDashboard from './pages/SimpleAdminDashboard';
 import SumUpAdmin from './pages/SumUpAdmin';
 import CashierInterface from './pages/CashierInterface';
+import MobileCashier from './pages/MobileCashier';
 
 function App() {
   return (
@@ -36,6 +37,12 @@ function App() {
               <Route 
                 path="/cashier" 
                 element={<CashierInterface />}
+              />
+              
+              {/* Interface caisse mobile */}
+              <Route 
+                path="/mobile" 
+                element={<MobileCashier />}
               />
               
                   {/* Interface administrateur */}
