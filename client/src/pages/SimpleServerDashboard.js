@@ -109,28 +109,39 @@ const SimpleServerDashboard = () => {
       const product = products.find(p => p.id === productId);
       if (!product) return;
 
-      // Simuler une vente (sans authentification)
-      const saleData = {
-        product_id: productId,
-        product_name: product.name,
-        price: product.currentPrice,
-        quantity: quantity,
-        total_amount: product.currentPrice * quantity,
-        server_name: 'Serveur',
-        notes: 'Vente via interface serveur'
-      };
+      console.log(`🛒 Vente de ${quantity}x ${product.name} à ${product.currentPrice}€`);
 
-      // Mettre à jour le stock localement
-      setProducts(prev => prev.map(p => 
-        p.id === productId 
-          ? { ...p, stock: Math.max(0, p.stock - quantity), salesCount: (p.salesCount || 0) + quantity }
-          : p
-      ));
+      // Appeler l'API pour enregistrer la vente
+      const response = await axios.post(`/api/products/${productId}/sell`, {
+        quantity: quantity
+      });
 
-      toast.success(`${quantity}x ${product.name} vendu(e) !`);
+      if (response.data.message) {
+        console.log('✅ Vente enregistrée:', response.data);
+        
+        // Mettre à jour l'état local avec les données du serveur
+        setProducts(prev => prev.map(p => 
+          p.id === productId 
+            ? { ...p, stock: response.data.product.stock, salesCount: (p.salesCount || 0) + quantity }
+            : p
+        ));
+        setFilteredProducts(prev => prev.map(p => 
+          p.id === productId 
+            ? { ...p, stock: response.data.product.stock, salesCount: (p.salesCount || 0) + quantity }
+            : p
+        ));
+
+        toast.success(`${quantity}x ${product.name} vendu(e) !`);
+      } else {
+        throw new Error('Réponse API invalide');
+      }
     } catch (error) {
-      console.error('Erreur vente:', error);
-      toast.error('Erreur lors de la vente');
+      console.error('❌ Erreur vente:', error);
+      if (error.response?.data?.message) {
+        toast.error(`Erreur: ${error.response.data.message}`);
+      } else {
+        toast.error('Erreur lors de la vente');
+      }
     }
   };
 

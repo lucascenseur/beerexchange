@@ -93,9 +93,10 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Route pour enregistrer une vente (+1 vente)
+// Route pour enregistrer une vente
 router.post('/:id/sell', async (req, res) => {
   try {
+    const { quantity = 1 } = req.body;
     const product = await Product.findByPk(req.params.id);
     
     if (!product) {
@@ -106,30 +107,26 @@ router.post('/:id/sell', async (req, res) => {
       return res.status(400).json({ message: 'Produit inactif' });
     }
     
-    if (product.stock <= 0) {
+    if (product.stock < quantity) {
       return res.status(400).json({ message: 'Stock insuffisant' });
     }
     
+    console.log(`🛒 Vente de ${quantity}x ${product.name} (stock: ${product.stock})`);
+    
     // Enregistrer la vente
     await product.update({
-      stock: product.stock - 1,
-      salesCount: product.salesCount + 1
+      stock: product.stock - quantity,
+      salesCount: product.salesCount + quantity
     });
     
     // Émettre l'événement Socket.io pour mise à jour temps réel
     const io = req.app.get('io');
     if (io) {
-      const publicProduct = {
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        category: product.category,
-        currentPrice: parseFloat(product.currentPrice),
-        stock: product.stock - 1,
-        image: product.image
-      };
-      io.to('public').emit('product-updated', publicProduct);
+      console.log(`📡 Émission Socket.io: product-updated pour ${product.name}`);
+      io.emit('product-updated', product);
+      io.to('public').emit('product-updated', product);
       io.to('servers').emit('product-updated', product);
+      io.to('admin').emit('product-updated', product);
     }
     
     res.json({
@@ -140,7 +137,8 @@ router.post('/:id/sell', async (req, res) => {
         description: product.description,
         category: product.category,
         currentPrice: parseFloat(product.currentPrice),
-        stock: product.stock - 1,
+        stock: product.stock,
+        salesCount: product.salesCount,
         image: product.image
       }
     });
