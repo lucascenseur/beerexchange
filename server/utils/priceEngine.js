@@ -90,7 +90,7 @@ class PriceEngine {
           
           // Appliquer les changements de prix pour cette vente
           const priceChange = this.calculatePriceChangeForSale(product, soldProductId, isSameProductType);
-          const newPrice = Math.max(0.01, parseFloat(product.currentPrice) + priceChange);
+          const newPrice = Math.max(0.01, Math.round((parseFloat(product.currentPrice) + priceChange) * 100) / 100);
           
           if (Math.abs(priceChange) > 0.001) { // Seuil de 0.001€ pour éviter les micro-changements
             // Sauvegarder l'historique des prix
@@ -214,7 +214,8 @@ class PriceEngine {
     // S'assurer que le prix ne descend pas en dessous de 0.50€
     newPrice = Math.max(0.50, newPrice);
     
-    return parseFloat(newPrice.toFixed(2));
+    // Arrondir à 2 décimales pour éviter les problèmes de précision
+    return Math.round(newPrice * 100) / 100;
   }
 
   // Calculer le nouveau prix d'un produit (ancienne fonction, désactivée)
@@ -238,7 +239,8 @@ class PriceEngine {
     // Limiter les variations (entre 60% et 180% du prix de base)
     newPrice = Math.max(basePrice * 0.6, Math.min(basePrice * 1.8, newPrice));
     
-    return parseFloat(newPrice.toFixed(2));
+    // Arrondir à 2 décimales pour éviter les problèmes de précision
+    return Math.round(newPrice * 100) / 100;
   }
 
   // Calculer le changement de prix pour une vente
