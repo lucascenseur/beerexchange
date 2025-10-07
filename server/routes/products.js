@@ -7,10 +7,13 @@ const router = express.Router();
 // Route publique pour obtenir tous les produits actifs (interface publique)
 router.get('/public', async (req, res) => {
   try {
+    console.log('🔍 Récupération des produits publics...');
     const products = await Product.findAll({
       where: { is_active: true },
       order: [['category', 'ASC'], ['name', 'ASC']]
     });
+    
+    console.log(`📊 ${products.length} produits trouvés en base`);
     
     const publicProducts = products.map(product => ({
       id: product.id,
@@ -22,12 +25,14 @@ router.get('/public', async (req, res) => {
       image: product.image
     }));
     
+    console.log(`✅ ${publicProducts.length} produits publics formatés`);
+    
     res.json({
       products: publicProducts,
       count: publicProducts.length
     });
   } catch (error) {
-    console.error('Erreur récupération produits publics:', error);
+    console.error('❌ Erreur récupération produits publics:', error);
     res.status(500).json({ message: 'Erreur serveur' });
   }
 });
