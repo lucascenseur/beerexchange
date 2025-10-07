@@ -99,7 +99,19 @@ node scripts/initMariaDB.js all
 cd ..
 print_success "Base de données initialisée"
 
-# 7. Démarrer l'application
+# 7. Créer un fichier .env pour le client si nécessaire
+print_status "Configuration du client..."
+if [ ! -f "client/.env.local" ]; then
+    cat > client/.env.local << 'EOF'
+PORT=3001
+HOST=0.0.0.0
+DANGEROUSLY_DISABLE_HOST_CHECK=true
+GENERATE_SOURCEMAP=false
+EOF
+    print_success "Fichier .env.local créé pour le client"
+fi
+
+# 8. Démarrer l'application
 print_status "Démarrage de l'application..."
 print_success "Tout est prêt ! Démarrage de Beer Exchange..."
 echo ""
