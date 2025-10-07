@@ -21,7 +21,7 @@ const BeerExchangeDisplay = () => {
       id: Date.now(),
       productName,
       quantity,
-      price,
+      price: parseFloat(price || 0),
       timestamp: new Date(),
       time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     };
@@ -146,8 +146,8 @@ const BeerExchangeDisplay = () => {
         .filter(product => product && product.id && product.name && product.currentPrice !== null && product.currentPrice !== undefined)
         .map(product => ({
           ...product,
-          currentPrice: product.currentPrice || 0,
-          previousPrice: product.currentPrice || 0,
+          currentPrice: parseFloat(product.currentPrice || 0),
+          previousPrice: parseFloat(product.currentPrice || 0),
           priceChange: 0,
           trend: 'stable'
         }));
@@ -181,8 +181,8 @@ const BeerExchangeDisplay = () => {
       
       setProducts(prev => prev.map(product => {
         if (product && product.id === updatedProduct.id) {
-          const currentPrice = product.currentPrice || 0;
-          const newPrice = updatedProduct.currentPrice || 0;
+          const currentPrice = parseFloat(product.currentPrice || 0);
+          const newPrice = parseFloat(updatedProduct.currentPrice || 0);
           const priceChange = newPrice - currentPrice;
           const trend = priceChange > 0 ? 'up' : priceChange < 0 ? 'down' : 'stable';
           
@@ -211,6 +211,7 @@ const BeerExchangeDisplay = () => {
 
           return {
             ...updatedProduct,
+            currentPrice: newPrice,
             previousPrice: currentPrice,
             priceChange,
             trend
@@ -223,7 +224,8 @@ const BeerExchangeDisplay = () => {
     const unsubscribeCreate = onProductCreated((newProduct) => {
       setProducts(prev => [...prev, {
         ...newProduct,
-        previousPrice: newProduct.currentPrice,
+        currentPrice: parseFloat(newProduct.currentPrice || 0),
+        previousPrice: parseFloat(newProduct.currentPrice || 0),
         priceChange: 0,
         trend: 'stable'
       }]);
@@ -362,7 +364,7 @@ const BeerExchangeDisplay = () => {
                       transition={{ duration: 0.3 }}
                       className={`text-2xl font-bold ${getPriceColor(product.trend)}`}
                     >
-                      ${(product.currentPrice || 0).toFixed(2)}
+                      ${parseFloat(product.currentPrice || 0).toFixed(2)}
                     </motion.div>
                     
                     <motion.div
@@ -433,7 +435,7 @@ const BeerExchangeDisplay = () => {
                       transition={{ duration: 0.3 }}
                       className={`text-2xl font-bold ${getPriceColor(product.trend)}`}
                     >
-                      ${(product.currentPrice || 0).toFixed(2)}
+                      ${parseFloat(product.currentPrice || 0).toFixed(2)}
                     </motion.div>
                     
                     <motion.div
