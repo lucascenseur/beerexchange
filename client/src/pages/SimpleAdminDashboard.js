@@ -176,42 +176,6 @@ const SimpleAdminDashboard = () => {
     fetchProducts();
   }, []);
 
-  // Mettre à jour le prix d'un produit
-  const handlePriceUpdate = async (productId, newPrice) => {
-    try {
-      const product = products.find(p => p.id === productId);
-      if (!product) return;
-
-      // Mettre à jour localement
-      setProducts(prev => prev.map(p => 
-        p.id === productId ? { ...p, currentPrice: newPrice } : p
-      ));
-
-      toast.success(`Prix de ${product.name} mis à jour !`);
-    } catch (error) {
-      console.error('Erreur mise à jour prix:', error);
-      toast.error('Erreur lors de la mise à jour');
-    }
-  };
-
-  // Mettre à jour le stock d'un produit
-  const handleStockUpdate = async (productId, newStock) => {
-    try {
-      const product = products.find(p => p.id === productId);
-      if (!product) return;
-
-      // Mettre à jour localement
-      setProducts(prev => prev.map(p => 
-        p.id === productId ? { ...p, stock: newStock } : p
-      ));
-
-      toast.success(`Stock de ${product.name} mis à jour !`);
-    } catch (error) {
-      console.error('Erreur mise à jour stock:', error);
-      toast.error('Erreur lors de la mise à jour');
-    }
-  };
-
   // Obtenir les catégories uniques
   const categories = [...new Set(products.map(product => product.category))];
 
