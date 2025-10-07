@@ -8,6 +8,7 @@ import BeerExchangeDisplay from './pages/BeerExchangeDisplay';
 import SimpleLogin from './pages/SimpleLogin';
 import SimpleServerDashboard from './pages/SimpleServerDashboard';
 import SimpleAdminDashboard from './pages/SimpleAdminDashboard';
+import EnhancedAdminDashboard from './pages/EnhancedAdminDashboard';
 import SumUpAdmin from './pages/SumUpAdmin';
 import CashierInterface from './pages/CashierInterface';
 import MobileCashier from './pages/MobileCashier';
@@ -49,6 +50,12 @@ function App() {
                   <Route
                     path="/admin/dashboard"
                     element={<SimpleAdminDashboard />}
+                  />
+                  
+                  {/* Interface administrateur améliorée */}
+                  <Route
+                    path="/admin/reports"
+                    element={<EnhancedAdminDashboard />}
                   />
 
                   {/* Interface SumUp */}
