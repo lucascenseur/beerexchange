@@ -73,7 +73,21 @@ class PriceEngine {
       console.log(`📊 ${productsToUpdate.length} produits à mettre à jour (écocup exclu)`);
 
       for (const product of productsToUpdate) {
-        const newPrice = this.calculateNewPriceAfterSale(product, marketTrend, soldProductId, quantity, false);
+        // Vérifier si ce produit est du même type que celui vendu (même nom de base)
+        const getBaseProductName = (name) => {
+          // Extraire le nom de base en supprimant les tailles et formats
+          return name
+            .replace(/\s*\(?\d+cl\)?/gi, '') // Supprimer 25cl, 50cl, etc.
+            .replace(/\s*\(?(verre|bouteille|canette)\)?/gi, '') // Supprimer verre, bouteille, canette
+            .replace(/\s*\(?\d+ml\)?/gi, '') // Supprimer 250ml, 500ml, etc.
+            .trim();
+        };
+        
+        const soldProductBaseName = getBaseProductName(soldProduct?.name || '');
+        const productBaseName = getBaseProductName(product.name);
+        const isSameProductType = productBaseName === soldProductBaseName && productBaseName !== '';
+        
+        const newPrice = this.calculateNewPriceAfterSale(product, marketTrend, soldProductId, quantity, isSameProductType);
         
         if (newPrice !== product.currentPrice) {
           // Sauvegarder l'historique des prix
@@ -178,6 +192,10 @@ class PriceEngine {
       // Le produit vendu augmente de 0,10 € (10 centimes)
       newPrice = currentPrice + 0.10;
       console.log(`📈 ${product.name}: +0.10€ (${currentPrice}€ → ${newPrice}€)`);
+    } else if (isSameProductType) {
+      // Les produits du même type (même nom de base) augmentent aussi de 0,05 € (5 centimes)
+      newPrice = currentPrice + 0.05;
+      console.log(`📈 ${product.name} (même type): +0.05€ (${currentPrice}€ → ${newPrice}€)`);
     } else {
       // Les autres produits (hors écocup) baissent de 0,01 € (1 centime)
       newPrice = currentPrice - 0.01;
