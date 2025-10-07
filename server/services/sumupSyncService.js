@@ -54,6 +54,12 @@ class SumUpSyncService {
   // Effectuer une synchronisation complète
   async performFullSync() {
     try {
+      // Protection contre les synchronisations trop fréquentes
+      if (this.lastSyncTime && (Date.now() - this.lastSyncTime.getTime()) < 30000) {
+        console.log('⏳ Synchronisation ignorée (trop récente)');
+        return;
+      }
+
       console.log('🔄 Début synchronisation complète SumUp...');
       this.syncStats.totalSyncs++;
 
@@ -99,9 +105,10 @@ class SumUpSyncService {
             where: { name: sumupProduct.name }
           });
 
-          if (existingProduct && existingProduct.current_price !== parseFloat(sumupProduct.price)) {
+          const currentPrice = existingProduct.currentPrice || existingProduct.current_price;
+          if (existingProduct && currentPrice !== parseFloat(sumupProduct.price)) {
             await existingProduct.update({
-              current_price: parseFloat(sumupProduct.price)
+              currentPrice: parseFloat(sumupProduct.price)
             });
             console.log(`📈 Prix mis à jour: ${sumupProduct.name} → ${sumupProduct.price}€`);
             updatedCount++;
@@ -203,7 +210,8 @@ class SumUpSyncService {
       for (const product of products) {
         try {
           // Mettre à jour le prix dans SumUp (simulation)
-          await this.updateSumUpProductPrice(product.name, product.current_price);
+          const price = product.currentPrice || product.current_price || product.basePrice || product.base_price || 0;
+          await this.updateSumUpProductPrice(product.name, price);
           syncedCount++;
         } catch (priceError) {
           console.error(`❌ Erreur sync prix vers SumUp ${product.name}:`, priceError);
