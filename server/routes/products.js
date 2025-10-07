@@ -1,7 +1,6 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Product = require('../models/Product');
-const { authenticateToken, requireServerOrAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -34,7 +33,7 @@ router.get('/public', async (req, res) => {
 });
 
 // Route pour obtenir tous les produits (serveurs et admin)
-router.get('/', authenticateToken, requireServerOrAdmin, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const { category, active } = req.query;
     const where = {};
@@ -58,7 +57,7 @@ router.get('/', authenticateToken, requireServerOrAdmin, async (req, res) => {
 });
 
 // Route pour obtenir un produit par ID
-router.get('/:id', authenticateToken, requireServerOrAdmin, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const product = await Product.findByPk(req.params.id);
     
@@ -74,7 +73,7 @@ router.get('/:id', authenticateToken, requireServerOrAdmin, async (req, res) => 
 });
 
 // Route pour enregistrer une vente (+1 vente)
-router.post('/:id/sell', authenticateToken, requireServerOrAdmin, async (req, res) => {
+router.post('/:id/sell', async (req, res) => {
   try {
     const product = await Product.findByPk(req.params.id);
     
@@ -135,7 +134,7 @@ router.post('/:id/sell', authenticateToken, requireServerOrAdmin, async (req, re
 });
 
 // Route pour obtenir l'historique des prix d'un produit
-router.get('/:id/price-history', authenticateToken, requireServerOrAdmin, async (req, res) => {
+router.get('/:id/price-history', async (req, res) => {
   try {
     const product = await Product.findByPk(req.params.id);
     
@@ -156,7 +155,7 @@ router.get('/:id/price-history', authenticateToken, requireServerOrAdmin, async 
 });
 
 // Route pour obtenir les statistiques d'un produit
-router.get('/:id/stats', authenticateToken, requireServerOrAdmin, async (req, res) => {
+router.get('/:id/stats', async (req, res) => {
   try {
     const product = await Product.findByPk(req.params.id);
     

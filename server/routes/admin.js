@@ -3,13 +3,10 @@ const { body, validationResult } = require('express-validator');
 const Product = require('../models/Product');
 const User = require('../models/User');
 const Sale = require('../models/Sale');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Toutes les routes admin nécessitent l'authentification et le rôle admin
-router.use(authenticateToken);
-router.use(requireAdmin);
+// Toutes les routes admin sont maintenant publiques
 
 // Route pour obtenir le dashboard admin
 router.get('/dashboard', async (req, res) => {

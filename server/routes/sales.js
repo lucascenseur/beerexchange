@@ -2,12 +2,11 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Sale = require('../models/Sale');
 const Product = require('../models/Product');
-const { authenticateToken, requireServerOrAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
 // Route pour obtenir toutes les ventes
-router.get('/', authenticateToken, requireServerOrAdmin, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const { 
       startDate, 
@@ -107,7 +106,7 @@ router.get('/today', authenticateToken, requireServerOrAdmin, async (req, res) =
 });
 
 // Route pour obtenir les ventes par serveur
-router.get('/by-server', authenticateToken, requireServerOrAdmin, async (req, res) => {
+router.get('/by-server', async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     
@@ -150,8 +149,6 @@ router.get('/by-server', authenticateToken, requireServerOrAdmin, async (req, re
 
 // Route pour créer une vente manuelle (admin seulement)
 router.post('/', [
-  authenticateToken,
-  requireServerOrAdmin,
   body('productId').isMongoId().withMessage('ID produit invalide'),
   body('quantity').isInt({ min: 1 }).withMessage('Quantité doit être un entier positif'),
   body('price').isFloat({ min: 0 }).withMessage('Prix doit être positif'),
