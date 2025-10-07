@@ -69,8 +69,8 @@ class SumUpSyncService {
       // 2. Synchroniser les ventes depuis SumUp
       await this.syncSalesFromSumUp();
 
-      // 3. Synchroniser les prix vers SumUp (si modifiés)
-      await this.syncPricesToSumUp();
+      // 3. Synchronisation vers SumUp désactivée (API ne le permet pas)
+      console.log('⚠️ Synchronisation vers SumUp désactivée (API limitée)');
 
       this.syncStats.successfulSyncs++;
       this.lastSyncTime = new Date();

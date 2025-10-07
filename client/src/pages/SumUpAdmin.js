@@ -364,13 +364,13 @@ const SumUpAdmin = () => {
             
             <button
               onClick={syncToSumUp}
-              disabled={syncing}
-              className="p-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 rounded-lg transition-colors duration-200 flex items-center gap-3"
+              disabled={true}
+              className="p-4 bg-gray-600 cursor-not-allowed rounded-lg flex items-center gap-3 opacity-50"
             >
               <Upload className="w-6 h-6" />
               <div className="text-left">
                 <p className="font-semibold">Synchroniser vers SumUp</p>
-                <p className="text-sm opacity-80">Exporter les produits vers SumUp</p>
+                <p className="text-sm opacity-80">Désactivé (API limitée)</p>
               </div>
             </button>
           </div>
@@ -382,10 +382,11 @@ const SumUpAdmin = () => {
             </div>
           )}
 
-          <div className="mt-4 p-3 bg-blue-500/20 border border-blue-500/30 rounded-lg">
-            <p className="text-blue-300 text-sm">
-              <strong>ℹ️ Note importante :</strong> L'API SumUp ne permet pas de récupérer les produits existants. 
-              Utilisez l'ajout manuel ci-dessous pour créer vos produits.
+          <div className="mt-4 p-3 bg-orange-500/20 border border-orange-500/30 rounded-lg">
+            <p className="text-orange-300 text-sm">
+              <strong>⚠️ Limitation API SumUp :</strong> L'API SumUp ne permet pas de modifier les prix des produits. 
+              La synchronisation fonctionne uniquement de SumUp vers Beer Exchange. 
+              Les prix dynamiques ne sont visibles que dans Beer Exchange.
             </p>
           </div>
         </div>
