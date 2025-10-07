@@ -1,6 +1,8 @@
-const { sequelize } = require('../config/database');
-const Product = require('../models/Product');
-const PriceHistory = require('../models/PriceHistory');
+#!/usr/bin/env node
+
+const { sequelize } = require('./server/config/database');
+const Product = require('./server/models/Product');
+const PriceHistory = require('./server/models/PriceHistory');
 require('dotenv').config();
 
 const realProducts = [
@@ -164,7 +166,7 @@ const realProducts = [
   }
 ];
 
-async function quickInit() {
+async function resetProducts() {
   try {
     console.log('🔌 Connexion à MariaDB...');
     await sequelize.authenticate();
@@ -198,16 +200,9 @@ async function quickInit() {
   } catch (error) {
     console.error('❌ Erreur lors de l\'initialisation:', error);
   } finally {
-    // Ne pas fermer la connexion ici si ce script est appelé par initMariaDB.js
-    // await sequelize.close();
+    await sequelize.close();
+    console.log('🔌 Déconnexion de MariaDB');
   }
 }
 
-if (require.main === module) {
-  quickInit().then(() => {
-    sequelize.close();
-    console.log('🔌 Déconnexion de MariaDB');
-  });
-}
-
-module.exports = { quickInit };
+resetProducts();

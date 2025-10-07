@@ -54,8 +54,8 @@ const initProducts = async () => {
     console.log('✅ Connexion à MariaDB réussie');
 
     // Utiliser les vrais produits de la soirée étudiante
-    const { initRealProducts } = require('./initRealProducts');
-    await initRealProducts();
+    const { quickInit } = require('./quickInit');
+    await quickInit();
 
     console.log('✅ Initialisation des produits terminée');
     
