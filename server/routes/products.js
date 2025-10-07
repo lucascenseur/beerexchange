@@ -9,7 +9,7 @@ router.get('/public', async (req, res) => {
   try {
     console.log('🔍 Récupération des produits publics...');
     const products = await Product.findAll({
-      where: { is_active: true },
+      where: { isActive: true },
       order: [['category', 'ASC'], ['name', 'ASC']]
     });
     
@@ -20,12 +20,13 @@ router.get('/public', async (req, res) => {
       name: product.name,
       description: product.description,
       category: product.category,
-      currentPrice: parseFloat(product.current_price),
+      currentPrice: parseFloat(product.currentPrice),
       stock: product.stock,
       image: product.image
     }));
     
     console.log(`✅ ${publicProducts.length} produits publics formatés`);
+    console.log('📋 Premier produit:', publicProducts[0] || 'Aucun produit');
     
     res.json({
       products: publicProducts,
@@ -44,7 +45,7 @@ router.get('/', async (req, res) => {
     const where = {};
     
     if (category) where.category = category;
-    if (active !== undefined) where.is_active = active === 'true';
+    if (active !== undefined) where.isActive = active === 'true';
     
     const products = await Product.findAll({
       where,
@@ -86,7 +87,7 @@ router.post('/:id/sell', async (req, res) => {
       return res.status(404).json({ message: 'Produit non trouvé' });
     }
     
-    if (!product.is_active) {
+    if (!product.isActive) {
       return res.status(400).json({ message: 'Produit inactif' });
     }
     
@@ -97,7 +98,7 @@ router.post('/:id/sell', async (req, res) => {
     // Enregistrer la vente
     await product.update({
       stock: product.stock - 1,
-      sales_count: product.sales_count + 1
+      salesCount: product.salesCount + 1
     });
     
     // Émettre l'événement Socket.io pour mise à jour temps réel
@@ -108,7 +109,7 @@ router.post('/:id/sell', async (req, res) => {
         name: product.name,
         description: product.description,
         category: product.category,
-        currentPrice: parseFloat(product.current_price),
+        currentPrice: parseFloat(product.currentPrice),
         stock: product.stock - 1,
         image: product.image
       };
@@ -123,7 +124,7 @@ router.post('/:id/sell', async (req, res) => {
         name: product.name,
         description: product.description,
         category: product.category,
-        currentPrice: parseFloat(product.current_price),
+        currentPrice: parseFloat(product.currentPrice),
         stock: product.stock - 1,
         image: product.image
       }
@@ -169,11 +170,11 @@ router.get('/:id/stats', async (req, res) => {
     }
     
     const stats = {
-      totalSales: product.sales_count,
+      totalSales: product.salesCount,
       currentStock: product.stock,
-      stockSold: product.initial_stock - product.stock,
-      currentPrice: parseFloat(product.current_price),
-      basePrice: parseFloat(product.base_price),
+      stockSold: product.initialStock - product.stock,
+      currentPrice: parseFloat(product.currentPrice),
+      basePrice: parseFloat(product.basePrice),
       priceVariation: 0,
       priceHistory: [] // 10 derniers points
     };
