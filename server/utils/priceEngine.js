@@ -56,6 +56,15 @@ class PriceEngine {
       const soldProduct = products.find(p => p.id === soldProductId);
       console.log(`🔄 Mise à jour des prix après vente de ${quantity}x ${soldProduct?.name || 'produit inconnu'}`);
 
+      // Grouper les produits par nom pour traiter les produits identiques ensemble
+      const productsByName = {};
+      products.forEach(product => {
+        if (!productsByName[product.name]) {
+          productsByName[product.name] = [];
+        }
+        productsByName[product.name].push(product);
+      });
+
       for (const product of products) {
         // Exclure l'écocup des mises à jour de prix (prix fixe)
         if (product.name && product.name.toLowerCase().includes('écocup')) {
@@ -63,7 +72,10 @@ class PriceEngine {
           continue;
         }
         
-        const newPrice = this.calculateNewPriceAfterSale(product, marketTrend, soldProductId, quantity);
+        // Vérifier si ce produit est du même type que celui vendu
+        const isSameProductType = product.name === soldProduct?.name;
+        
+        const newPrice = this.calculateNewPriceAfterSale(product, marketTrend, soldProductId, quantity, isSameProductType);
         
         if (newPrice !== product.currentPrice) {
           // Sauvegarder l'historique des prix
@@ -146,7 +158,7 @@ class PriceEngine {
   }
 
   // Calculer le nouveau prix d'un produit après une vente
-  calculateNewPriceAfterSale(product, marketTrend, soldProductId, quantity) {
+  calculateNewPriceAfterSale(product, marketTrend, soldProductId, quantity, isSameProductType = false) {
     const currentPrice = parseFloat(product.currentPrice);
     const basePrice = parseFloat(product.basePrice);
     
@@ -162,6 +174,10 @@ class PriceEngine {
       // Le produit vendu gagne 5 centimes par quantité vendue (système plus agressif)
       newPrice = currentPrice + (quantity * 0.05);
       console.log(`📈 ${product.name}: +${quantity * 0.05}€ (${currentPrice}€ → ${newPrice}€)`);
+    } else if (isSameProductType) {
+      // Les produits du même type (même nom) gagnent aussi 3 centimes par quantité
+      newPrice = currentPrice + (quantity * 0.03);
+      console.log(`📈 ${product.name} (même type): +${quantity * 0.03}€ (${currentPrice}€ → ${newPrice}€)`);
     } else {
       // Les autres produits perdent 2 centimes (système plus agressif)
       newPrice = currentPrice - 0.02;
