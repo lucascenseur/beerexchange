@@ -12,6 +12,7 @@ const BeerExchangeDisplay = () => {
   const [priceChanges, setPriceChanges] = useState({});
   const [priceHistory, setPriceHistory] = useState({});
   const [salesLogs, setSalesLogs] = useState([]);
+  const [lastSaleTimestamp, setLastSaleTimestamp] = useState({});
 
   const { onProductUpdate, onProductCreated, onProductDeleted } = useSocket();
 
@@ -213,9 +214,23 @@ const BeerExchangeDisplay = () => {
           const salesIncrease = newSales - currentSales;
           
           if (salesIncrease > 0) {
-            // Ajouter un log de vente
-            addSalesLog(product.name, salesIncrease, newPrice);
-            console.log(`🛒 Vente détectée: ${salesIncrease}x ${product.name} à ${newPrice}€`);
+            // Vérifier si on a déjà traité cette vente récemment (éviter les doublons)
+            const now = Date.now();
+            const lastTimestamp = lastSaleTimestamp[product.id] || 0;
+            const timeDiff = now - lastTimestamp;
+            
+            // Si plus de 1 seconde s'est écoulée depuis la dernière vente de ce produit
+            if (timeDiff > 1000) {
+              // Ajouter un log de vente
+              addSalesLog(product.name, salesIncrease, newPrice);
+              console.log(`🛒 Vente détectée: ${salesIncrease}x ${product.name} à ${newPrice}€`);
+              
+              // Mettre à jour le timestamp de la dernière vente
+              setLastSaleTimestamp(prev => ({
+                ...prev,
+                [product.id]: now
+              }));
+            }
           }
           
           // Animation de changement de prix
