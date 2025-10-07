@@ -59,11 +59,21 @@ class PriceEngine {
       
       console.log(`📊 ${productsToUpdate.length} produits à mettre à jour (écocup exclu)`);
 
-      // Traiter chaque vente individuellement
+      // Traiter chaque vente individuellement avec accumulation des prix
       for (let i = 0; i < quantity; i++) {
         console.log(`🔄 Traitement vente ${i + 1}/${quantity} pour ${soldProduct?.name}`);
         
-        for (const product of productsToUpdate) {
+        // Recharger les produits pour avoir les prix à jour
+        const currentProducts = await Product.findAll({
+          where: { isActive: true }
+        });
+        
+        for (const product of currentProducts) {
+          // Exclure l'écocup
+          if (product.name && product.name.toLowerCase().includes('écocup')) {
+            continue;
+          }
+          
           // Vérifier si ce produit est du même type que celui vendu (même nom de base)
           const getBaseProductName = (name) => {
             // Extraire le nom de base en supprimant les tailles et formats
@@ -80,7 +90,7 @@ class PriceEngine {
           
           // Appliquer les changements de prix pour cette vente
           const priceChange = this.calculatePriceChangeForSale(product, soldProductId, isSameProductType);
-          const newPrice = Math.max(0.01, product.currentPrice + priceChange);
+          const newPrice = Math.max(0.01, parseFloat(product.currentPrice) + priceChange);
           
           if (Math.abs(priceChange) > 0.001) { // Seuil de 0.001€ pour éviter les micro-changements
             // Sauvegarder l'historique des prix
@@ -93,7 +103,7 @@ class PriceEngine {
             // Mettre à jour le produit
             await product.update({ currentPrice: newPrice });
 
-            console.log(`💰 ${product.name}: ${product.currentPrice.toFixed(2)}€ → ${newPrice.toFixed(2)}€ (${priceChange > 0 ? '+' : ''}${priceChange.toFixed(2)}€)`);
+            console.log(`💰 ${product.name}: ${parseFloat(product.currentPrice).toFixed(2)}€ → ${newPrice.toFixed(2)}€ (${priceChange > 0 ? '+' : ''}${priceChange.toFixed(2)}€)`);
 
             // Émettre l'événement Socket.io
             if (io) {
