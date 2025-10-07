@@ -280,6 +280,16 @@ router.post('/sales', async (req, res) => {
       
       console.log(`✅ Vente créée: ${quantity}x ${product_name} - Total: ${total_amount}€`);
       
+      // Déclencher le système de bourse pour mettre à jour les prix
+      try {
+        const priceEngine = require('../services/priceEngine');
+        await priceEngine.processSale(product_id, parseInt(quantity));
+        console.log(`📈 Système de bourse déclenché pour ${product_name}`);
+      } catch (priceError) {
+        console.error('❌ Erreur système de bourse:', priceError);
+        // Ne pas faire échouer la vente si le système de bourse échoue
+      }
+      
       res.json({
         success: true,
         message: 'Vente enregistrée avec succès',
