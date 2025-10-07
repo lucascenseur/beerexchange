@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Product = require('../models/Product');
+const Sale = require('../models/Sale');
 
 const router = express.Router();
 
@@ -241,6 +242,71 @@ router.get('/:id/stats', async (req, res) => {
   } catch (error) {
     console.error('Erreur récupération statistiques produit:', error);
     res.status(500).json({ message: 'Erreur serveur' });
+  }
+});
+
+// Route pour créer une vente
+router.post('/sales', async (req, res) => {
+  try {
+    const { product_id, product_name, price, quantity, total_amount, server_id, server_name, notes } = req.body;
+    
+    console.log('🛒 Création de vente:', { product_id, product_name, price, quantity, total_amount, server_id, server_name });
+    
+    // Validation des données
+    if (!product_id || !product_name || !price || !quantity || !total_amount) {
+      return res.status(400).json({ 
+        message: 'Données manquantes', 
+        required: ['product_id', 'product_name', 'price', 'quantity', 'total_amount'] 
+      });
+    }
+    
+    // Créer la vente
+    const sale = await Sale.create({
+      product_id: parseInt(product_id),
+      product_name: product_name,
+      price: parseFloat(price),
+      quantity: parseInt(quantity),
+      total_amount: parseFloat(total_amount),
+      server_id: parseInt(server_id) || 1,
+      server_name: server_name || 'Serveur',
+      notes: notes || `Vente mobile - ${new Date().toLocaleString()}`
+    });
+    
+    // Mettre à jour le produit
+    const product = await Product.findByPk(product_id);
+    if (product) {
+      const newSalesCount = (product.salesCount || 0) + parseInt(quantity);
+      await product.update({ salesCount: newSalesCount });
+      
+      console.log(`✅ Vente créée: ${quantity}x ${product_name} - Total: ${total_amount}€`);
+      
+      res.json({
+        success: true,
+        message: 'Vente enregistrée avec succès',
+        sale: {
+          id: sale.id,
+          product_name: sale.product_name,
+          quantity: sale.quantity,
+          total_amount: sale.total_amount,
+          timestamp: sale.created_at
+        },
+        product: {
+          id: product.id,
+          name: product.name,
+          salesCount: newSalesCount,
+          currentPrice: product.currentPrice
+        }
+      });
+    } else {
+      res.status(404).json({ message: 'Produit non trouvé' });
+    }
+    
+  } catch (error) {
+    console.error('❌ Erreur création vente:', error);
+    res.status(500).json({ 
+      message: 'Erreur lors de la création de la vente',
+      error: error.message 
+    });
   }
 });
 

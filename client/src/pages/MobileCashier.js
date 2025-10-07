@@ -148,7 +148,7 @@ const MobileCashier = () => {
 
       // Envoyer toutes les ventes
       for (const sale of sales) {
-        await axios.post('/api/sales', sale);
+        await axios.post('/api/products/sales', sale);
       }
 
       // Afficher le succès
