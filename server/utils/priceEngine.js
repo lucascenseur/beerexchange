@@ -49,21 +49,8 @@ class PriceEngine {
         where: { isActive: true }
       });
 
-      // Calculer l'activité du marché global
-      const totalSales = products.reduce((sum, product) => sum + (product.salesCount || 0), 0);
-      const marketTrend = this.calculateMarketTrend(totalSales);
-
       const soldProduct = products.find(p => p.id === soldProductId);
       console.log(`🔄 Mise à jour des prix après vente de ${quantity}x ${soldProduct?.name || 'produit inconnu'}`);
-
-      // Grouper les produits par nom pour traiter les produits identiques ensemble
-      const productsByName = {};
-      products.forEach(product => {
-        if (!productsByName[product.name]) {
-          productsByName[product.name] = [];
-        }
-        productsByName[product.name].push(product);
-      });
 
       // Filtrer les produits (exclure l'écocup qui n'influence rien)
       const productsToUpdate = products.filter(product => 
@@ -72,37 +59,46 @@ class PriceEngine {
       
       console.log(`📊 ${productsToUpdate.length} produits à mettre à jour (écocup exclu)`);
 
-      for (const product of productsToUpdate) {
-        // Vérifier si ce produit est du même type que celui vendu (même nom de base)
-        const getBaseProductName = (name) => {
-          // Extraire le nom de base en supprimant les tailles et formats
-          return name
-            .replace(/\s*\(?\d+cl\)?/gi, '') // Supprimer 25cl, 50cl, etc.
-            .replace(/\s*\(?(verre|bouteille|canette)\)?/gi, '') // Supprimer verre, bouteille, canette
-            .replace(/\s*\(?\d+ml\)?/gi, '') // Supprimer 250ml, 500ml, etc.
-            .trim();
-        };
+      // Traiter chaque vente individuellement
+      for (let i = 0; i < quantity; i++) {
+        console.log(`🔄 Traitement vente ${i + 1}/${quantity} pour ${soldProduct?.name}`);
         
-        const soldProductBaseName = getBaseProductName(soldProduct?.name || '');
-        const productBaseName = getBaseProductName(product.name);
-        const isSameProductType = productBaseName === soldProductBaseName && productBaseName !== '';
-        
-        const newPrice = this.calculateNewPriceAfterSale(product, marketTrend, soldProductId, quantity, isSameProductType);
-        
-        if (newPrice !== product.currentPrice) {
-          // Sauvegarder l'historique des prix
-          await PriceHistory.create({
-            productId: product.id,
-            price: newPrice,
-            salesCount: product.salesCount
-          });
+        for (const product of productsToUpdate) {
+          // Vérifier si ce produit est du même type que celui vendu (même nom de base)
+          const getBaseProductName = (name) => {
+            // Extraire le nom de base en supprimant les tailles et formats
+            return name
+              .replace(/\s*\(?\d+cl\)?/gi, '') // Supprimer 25cl, 50cl, etc.
+              .replace(/\s*\(?(verre|bouteille|canette)\)?/gi, '') // Supprimer verre, bouteille, canette
+              .replace(/\s*\(?\d+ml\)?/gi, '') // Supprimer 250ml, 500ml, etc.
+              .trim();
+          };
+          
+          const soldProductBaseName = getBaseProductName(soldProduct?.name || '');
+          const productBaseName = getBaseProductName(product.name);
+          const isSameProductType = productBaseName === soldProductBaseName && productBaseName !== '';
+          
+          // Appliquer les changements de prix pour cette vente
+          const priceChange = this.calculatePriceChangeForSale(product, soldProductId, isSameProductType);
+          const newPrice = Math.max(0.01, product.currentPrice + priceChange);
+          
+          if (Math.abs(priceChange) > 0.001) { // Seuil de 0.001€ pour éviter les micro-changements
+            // Sauvegarder l'historique des prix
+            await PriceHistory.create({
+              productId: product.id,
+              price: newPrice,
+              salesCount: product.salesCount
+            });
 
-          // Mettre à jour le produit
-          await product.update({ currentPrice: newPrice });
+            // Mettre à jour le produit
+            await product.update({ currentPrice: newPrice });
 
-          // Émettre l'événement Socket.io
-          if (io) {
-            io.emit('product-updated', product);
+            console.log(`💰 ${product.name}: ${product.currentPrice.toFixed(2)}€ → ${newPrice.toFixed(2)}€ (${priceChange > 0 ? '+' : ''}${priceChange.toFixed(2)}€)`);
+
+            // Émettre l'événement Socket.io
+            if (io) {
+              io.emit('product-updated', product);
+            }
           }
         }
       }
@@ -233,6 +229,18 @@ class PriceEngine {
     newPrice = Math.max(basePrice * 0.6, Math.min(basePrice * 1.8, newPrice));
     
     return parseFloat(newPrice.toFixed(2));
+  }
+
+  // Calculer le changement de prix pour une vente
+  calculatePriceChangeForSale(product, soldProductId, isSameProductType) {
+    // Si c'est le même produit ou le même type de produit vendu
+    if (product.id === soldProductId || isSameProductType) {
+      // Augmenter le prix de 10 centimes par vente
+      return 0.10;
+    } else {
+      // Diminuer le prix de 1 centime par vente pour les autres produits
+      return -0.01;
+    }
   }
 }
 
