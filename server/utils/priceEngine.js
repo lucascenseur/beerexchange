@@ -179,10 +179,9 @@ class PriceEngine {
       newPrice = currentPrice + 0.10;
       console.log(`📈 ${product.name}: +0.10€ (${currentPrice}€ → ${newPrice}€)`);
     } else {
-      // Les autres produits (hors écocup) baissent de 0,0038 € (0,38 centime)
-      // Calcul: 0,05 € répartis sur 13 produits = 0,05/13 ≈ 0,0038 €
-      newPrice = currentPrice - 0.0038;
-      console.log(`📉 ${product.name}: -0.0038€ (${currentPrice}€ → ${newPrice}€)`);
+      // Les autres produits (hors écocup) baissent de 0,01 € (1 centime)
+      newPrice = currentPrice - 0.01;
+      console.log(`📉 ${product.name}: -0.01€ (${currentPrice}€ → ${newPrice}€)`);
     }
     
     // Limiter les variations (entre 50% et 200% du prix de base)
