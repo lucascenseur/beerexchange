@@ -2,6 +2,7 @@ const express = require('express');
 const sumupService = require('../services/sumupServiceReal');
 const SumUpToken = require('../models/SumUpToken');
 const syncService = require('../services/syncService');
+const sumupSyncService = require('../services/sumupSyncService');
 const router = express.Router();
 
 // Route pour vérifier la configuration SumUp
@@ -524,6 +525,75 @@ router.post('/sync/auto-stop', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erreur lors de l\'arrêt de la synchronisation automatique'
+    });
+  }
+});
+
+// Routes de synchronisation automatique
+router.get('/sync/status', async (req, res) => {
+  try {
+    const status = sumupSyncService.getSyncStatus();
+    res.json({
+      success: true,
+      status: status
+    });
+  } catch (error) {
+    console.error('❌ Erreur statut sync:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération du statut'
+    });
+  }
+});
+
+router.post('/sync/start', async (req, res) => {
+  try {
+    const { intervalMinutes = 5 } = req.body;
+    sumupSyncService.startAutoSync(intervalMinutes);
+    
+    res.json({
+      success: true,
+      message: `Synchronisation automatique démarrée (${intervalMinutes}min)`
+    });
+  } catch (error) {
+    console.error('❌ Erreur démarrage sync:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors du démarrage de la synchronisation'
+    });
+  }
+});
+
+router.post('/sync/stop', async (req, res) => {
+  try {
+    sumupSyncService.stopAutoSync();
+    
+    res.json({
+      success: true,
+      message: 'Synchronisation automatique arrêtée'
+    });
+  } catch (error) {
+    console.error('❌ Erreur arrêt sync:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de l\'arrêt de la synchronisation'
+    });
+  }
+});
+
+router.post('/sync/now', async (req, res) => {
+  try {
+    await sumupSyncService.performFullSync();
+    
+    res.json({
+      success: true,
+      message: 'Synchronisation manuelle effectuée'
+    });
+  } catch (error) {
+    console.error('❌ Erreur sync manuelle:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la synchronisation manuelle'
     });
   }
 });

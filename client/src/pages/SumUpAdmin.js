@@ -10,7 +10,10 @@ import {
   AlertCircle,
   ExternalLink,
   ArrowLeft,
-  Settings
+  Settings,
+  Sync,
+  Play,
+  Pause
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -21,10 +24,11 @@ const SumUpAdmin = () => {
   const [sumupProducts, setSumupProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [syncStatus, setSyncStatus] = useState(null);
   const [config, setConfig] = useState(null);
   const [showManualImport, setShowManualImport] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: '', price: '', description: '' });
+  const [syncStatus, setSyncStatus] = useState(null);
+  const [syncLoading, setSyncLoading] = useState(false);
   const navigate = useNavigate();
 
   // Vérifier la configuration SumUp
@@ -111,6 +115,63 @@ const SumUpAdmin = () => {
       toast.error('Erreur lors de l\'ajout du produit');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Vérifier le statut de synchronisation
+  const checkSyncStatus = async () => {
+    try {
+      const response = await axios.get('/api/sumup/sync/status');
+      setSyncStatus(response.data.status);
+    } catch (error) {
+      console.error('Erreur statut sync:', error);
+    }
+  };
+
+  // Démarrer la synchronisation automatique
+  const startAutoSync = async () => {
+    setSyncLoading(true);
+    try {
+      const response = await axios.post('/api/sumup/sync/start', {
+        intervalMinutes: 5
+      });
+      toast.success(response.data.message);
+      checkSyncStatus();
+    } catch (error) {
+      console.error('Erreur démarrage sync:', error);
+      toast.error('Erreur lors du démarrage de la synchronisation');
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  // Arrêter la synchronisation automatique
+  const stopAutoSync = async () => {
+    setSyncLoading(true);
+    try {
+      const response = await axios.post('/api/sumup/sync/stop');
+      toast.success(response.data.message);
+      checkSyncStatus();
+    } catch (error) {
+      console.error('Erreur arrêt sync:', error);
+      toast.error('Erreur lors de l\'arrêt de la synchronisation');
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  // Synchronisation manuelle
+  const performManualSync = async () => {
+    setSyncLoading(true);
+    try {
+      const response = await axios.post('/api/sumup/sync/now');
+      toast.success(response.data.message);
+      checkSyncStatus();
+    } catch (error) {
+      console.error('Erreur sync manuelle:', error);
+      toast.error('Erreur lors de la synchronisation manuelle');
+    } finally {
+      setSyncLoading(false);
     }
   };
 
@@ -426,6 +487,91 @@ const SumUpAdmin = () => {
           <p>4. <strong>Paiements :</strong> Les ventes peuvent être synchronisées avec SumUp pour le suivi</p>
         </div>
       </div>
+
+      {/* Synchronisation automatique */}
+      {authStatus?.authenticated && (
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 mt-6 border border-white/20">
+          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <Sync className="w-6 h-6" />
+            Synchronisation automatique SumUp
+          </h3>
+          
+          {syncStatus && (
+            <div className="mb-4 p-4 bg-white/5 rounded-lg">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="text-white/70">Statut:</span>
+                  <div className={`font-semibold ${syncStatus.isRunning ? 'text-green-400' : 'text-red-400'}`}>
+                    {syncStatus.isRunning ? '🟢 Actif' : '🔴 Inactif'}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-white/70">Dernière sync:</span>
+                  <div className="text-white">
+                    {syncStatus.lastSyncTime ? new Date(syncStatus.lastSyncTime).toLocaleTimeString() : 'Jamais'}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-white/70">Sync réussies:</span>
+                  <div className="text-green-400 font-semibold">
+                    {syncStatus.stats?.successfulSyncs || 0}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-white/70">Échecs:</span>
+                  <div className="text-red-400 font-semibold">
+                    {syncStatus.stats?.failedSyncs || 0}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={startAutoSync}
+              disabled={syncLoading || syncStatus?.isRunning}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
+            >
+              <Play className="w-4 h-4" />
+              Démarrer auto-sync
+            </button>
+            
+            <button
+              onClick={stopAutoSync}
+              disabled={syncLoading || !syncStatus?.isRunning}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
+            >
+              <Pause className="w-4 h-4" />
+              Arrêter auto-sync
+            </button>
+            
+            <button
+              onClick={performManualSync}
+              disabled={syncLoading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${syncLoading ? 'animate-spin' : ''}`} />
+              Sync maintenant
+            </button>
+            
+            <button
+              onClick={checkSyncStatus}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200 flex items-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Actualiser statut
+            </button>
+          </div>
+
+          <div className="mt-4 p-3 bg-blue-500/20 border border-blue-500/30 rounded-lg">
+            <p className="text-blue-300 text-sm">
+              <strong>🔄 Synchronisation automatique :</strong> Synchronise les prix et ventes entre Beer Exchange et SumUp toutes les 5 minutes.
+              Les ventes SumUp déclenchent automatiquement le système de bourse.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Modal d'ajout manuel */}
       {showManualImport && (
