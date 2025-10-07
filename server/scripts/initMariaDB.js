@@ -15,19 +15,26 @@ const initUsers = async () => {
     await sequelize.sync({ force: true });
     console.log('🗑️  Tables recréées');
 
-    // Créer l'utilisateur admin
+    // Créer l'utilisateur admin avec mot de passe hashé
+    const bcrypt = require('bcryptjs');
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const hashedAdminPassword = await bcrypt.hash(adminPassword, 12);
+    
     const adminUser = await User.create({
       username: process.env.ADMIN_USERNAME || 'admin',
-      password: process.env.ADMIN_PASSWORD || 'admin123',
+      password: hashedAdminPassword,
       role: 'admin',
       is_active: true
     });
     console.log('👑 Utilisateur admin créé:', adminUser.username);
 
-    // Créer l'utilisateur serveur
+    // Créer l'utilisateur serveur avec mot de passe hashé
+    const serverPassword = process.env.SERVER_PASSWORD || 'server123';
+    const hashedServerPassword = await bcrypt.hash(serverPassword, 12);
+    
     const serverUser = await User.create({
       username: 'server',
-      password: process.env.SERVER_PASSWORD || 'server123',
+      password: hashedServerPassword,
       role: 'server',
       is_active: true
     });
