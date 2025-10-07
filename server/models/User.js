@@ -27,15 +27,13 @@ const User = sequelize.define('User', {
     type: DataTypes.ENUM('admin', 'server'),
     allowNull: false
   },
-  isActive: {
+  is_active: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true,
-    field: 'is_active'
+    defaultValue: true
   },
-  lastLogin: {
+  last_login: {
     type: DataTypes.DATE,
-    allowNull: true,
-    field: 'last_login'
+    allowNull: true
   }
 }, {
   tableName: 'users',

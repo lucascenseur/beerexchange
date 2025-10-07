@@ -19,7 +19,8 @@ const initUsers = async () => {
     const adminUser = await User.create({
       username: process.env.ADMIN_USERNAME || 'admin',
       password: process.env.ADMIN_PASSWORD || 'admin123',
-      role: 'admin'
+      role: 'admin',
+      is_active: true
     });
     console.log('👑 Utilisateur admin créé:', adminUser.username);
 
@@ -27,7 +28,8 @@ const initUsers = async () => {
     const serverUser = await User.create({
       username: 'server',
       password: process.env.SERVER_PASSWORD || 'server123',
-      role: 'server'
+      role: 'server',
+      is_active: true
     });
     console.log('🍺 Utilisateur serveur créé:', serverUser.username);
 
@@ -35,9 +37,6 @@ const initUsers = async () => {
     
   } catch (error) {
     console.error('❌ Erreur lors de l\'initialisation:', error);
-  } finally {
-    await sequelize.close();
-    console.log('🔌 Déconnexion de MariaDB');
   }
 };
 
@@ -157,9 +156,6 @@ const initProducts = async () => {
     
   } catch (error) {
     console.error('❌ Erreur lors de l\'initialisation des produits:', error);
-  } finally {
-    await sequelize.close();
-    console.log('🔌 Déconnexion de MariaDB');
   }
 };
 
@@ -174,7 +170,10 @@ if (require.main === module) {
   } else if (command === 'all') {
     initUsers().then(() => {
       setTimeout(() => {
-        initProducts();
+        initProducts().then(() => {
+          sequelize.close();
+          console.log('🔌 Déconnexion de MariaDB');
+        });
       }, 1000);
     });
   } else {
