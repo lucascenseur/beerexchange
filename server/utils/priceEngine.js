@@ -159,20 +159,20 @@ class PriceEngine {
     let newPrice = currentPrice;
     
     if (product.id === soldProductId) {
-      // Le produit vendu gagne 2 centimes par quantité vendue
-      newPrice = currentPrice + (quantity * 0.02);
-      console.log(`📈 ${product.name}: +${quantity * 0.02}€ (${currentPrice}€ → ${newPrice}€)`);
+      // Le produit vendu gagne 5 centimes par quantité vendue (système plus agressif)
+      newPrice = currentPrice + (quantity * 0.05);
+      console.log(`📈 ${product.name}: +${quantity * 0.05}€ (${currentPrice}€ → ${newPrice}€)`);
     } else {
-      // Les autres produits perdent 1 centime
-      newPrice = currentPrice - 0.01;
-      console.log(`📉 ${product.name}: -0.01€ (${currentPrice}€ → ${newPrice}€)`);
+      // Les autres produits perdent 2 centimes (système plus agressif)
+      newPrice = currentPrice - 0.02;
+      console.log(`📉 ${product.name}: -0.02€ (${currentPrice}€ → ${newPrice}€)`);
     }
     
-    // Limiter les variations (entre 50% et 200% du prix de base)
-    newPrice = Math.max(basePrice * 0.5, Math.min(basePrice * 2.0, newPrice));
+    // Limiter les variations (entre 30% et 300% du prix de base - seuils plus élevés)
+    newPrice = Math.max(basePrice * 0.3, Math.min(basePrice * 3.0, newPrice));
     
-    // S'assurer que le prix ne descend pas en dessous de 0.10€
-    newPrice = Math.max(0.10, newPrice);
+    // S'assurer que le prix ne descend pas en dessous de 0.50€ (seuil plus élevé)
+    newPrice = Math.max(0.50, newPrice);
     
     return parseFloat(newPrice.toFixed(2));
   }
