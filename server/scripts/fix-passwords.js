@@ -9,27 +9,23 @@ async function fixPasswords() {
     await sequelize.authenticate();
     console.log('✅ Connexion à MariaDB réussie');
 
-    // Corriger le mot de passe admin
+    // Corriger le mot de passe admin (contourner le hook beforeSave)
     console.log('🔧 Correction du mot de passe admin...');
-    const adminUser = await User.findOne({ where: { username: 'admin' } });
-    if (adminUser) {
-      const adminPassword = await bcrypt.hash('admin123', 12);
-      await adminUser.update({ password: adminPassword });
-      console.log('✅ Mot de passe admin corrigé');
-    } else {
-      console.log('❌ Utilisateur admin non trouvé');
-    }
+    const adminPassword = await bcrypt.hash('admin123', 12);
+    await sequelize.query(
+      'UPDATE users SET password = ? WHERE username = ?',
+      { replacements: [adminPassword, 'admin'] }
+    );
+    console.log('✅ Mot de passe admin corrigé');
 
-    // Corriger le mot de passe serveur
+    // Corriger le mot de passe serveur (contourner le hook beforeSave)
     console.log('🔧 Correction du mot de passe serveur...');
-    const serverUser = await User.findOne({ where: { username: 'server' } });
-    if (serverUser) {
-      const serverPassword = await bcrypt.hash('server123', 12);
-      await serverUser.update({ password: serverPassword });
-      console.log('✅ Mot de passe serveur corrigé');
-    } else {
-      console.log('❌ Utilisateur serveur non trouvé');
-    }
+    const serverPassword = await bcrypt.hash('server123', 12);
+    await sequelize.query(
+      'UPDATE users SET password = ? WHERE username = ?',
+      { replacements: [serverPassword, 'server'] }
+    );
+    console.log('✅ Mot de passe serveur corrigé');
 
     // Vérifier les corrections
     console.log('\n🔍 Vérification des corrections...');
