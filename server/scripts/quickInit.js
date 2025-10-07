@@ -9,158 +9,158 @@ const realProducts = [
     name: 'Kwak 25cl',
     category: 'beer',
     description: 'Ambrée 8,4%',
-    base_price: 4.00,
-    current_price: 4.00,
-    initial_stock: 50,
+    basePrice: 4.00,
+    currentPrice: 4.00,
+    initialStock: 50,
     stock: 50,
-    sales_count: 0,
-    is_active: true
+    salesCount: 0,
+    isActive: true
   },
   {
     name: 'Kwak 50cl',
     category: 'beer',
     description: 'Ambrée 8,4%',
-    base_price: 7.00,
-    current_price: 7.00,
-    initial_stock: 30,
+    basePrice: 7.00,
+    currentPrice: 7.00,
+    initialStock: 30,
     stock: 30,
-    sales_count: 0,
-    is_active: true
+    salesCount: 0,
+    isActive: true
   },
   {
     name: 'Celtpils 25cl',
     category: 'beer',
     description: 'Blonde 4,8%',
-    base_price: 3.00,
-    current_price: 3.00,
-    initial_stock: 60,
+    basePrice: 3.00,
+    currentPrice: 3.00,
+    initialStock: 60,
     stock: 60,
-    sales_count: 0,
-    is_active: true
+    salesCount: 0,
+    isActive: true
   },
   {
     name: 'Celtpils 50cl',
     category: 'beer',
     description: 'Blonde 4,8%',
-    base_price: 5.00,
-    current_price: 5.00,
-    initial_stock: 40,
+    basePrice: 5.00,
+    currentPrice: 5.00,
+    initialStock: 40,
     stock: 40,
-    sales_count: 0,
-    is_active: true
+    salesCount: 0,
+    isActive: true
   },
   {
     name: 'Levrettes Cherry 25cl',
     category: 'beer',
     description: 'Blanche, fruitée 3,5%',
-    base_price: 3.50,
-    current_price: 3.50,
-    initial_stock: 45,
+    basePrice: 3.50,
+    currentPrice: 3.50,
+    initialStock: 45,
     stock: 45,
-    sales_count: 0,
-    is_active: true
+    salesCount: 0,
+    isActive: true
   },
   {
     name: 'Levrettes Cherry 50cl',
     category: 'beer',
     description: 'Blanche, fruitée 3,5%',
-    base_price: 6.00,
-    current_price: 6.00,
-    initial_stock: 25,
+    basePrice: 6.00,
+    currentPrice: 6.00,
+    initialStock: 25,
     stock: 25,
-    sales_count: 0,
-    is_active: true
+    salesCount: 0,
+    isActive: true
   },
   {
     name: 'Levrettes Pêche 25cl',
     category: 'beer',
     description: 'Blanche, fruitée 3,7%',
-    base_price: 3.50,
-    current_price: 3.50,
-    initial_stock: 45,
+    basePrice: 3.50,
+    currentPrice: 3.50,
+    initialStock: 45,
     stock: 45,
-    sales_count: 0,
-    is_active: true
+    salesCount: 0,
+    isActive: true
   },
   {
     name: 'Levrettes Pêche 50cl',
     category: 'beer',
     description: 'Blanche, fruitée 3,7%',
-    base_price: 6.00,
-    current_price: 6.00,
-    initial_stock: 25,
+    basePrice: 6.00,
+    currentPrice: 6.00,
+    initialStock: 25,
     stock: 25,
-    sales_count: 0,
-    is_active: true
+    salesCount: 0,
+    isActive: true
   },
   // Vins
   {
     name: 'Vin blanc (verre)',
     category: 'cocktail',
     description: 'Vin blanc au verre',
-    base_price: 3.50,
-    current_price: 3.50,
-    initial_stock: 100,
+    basePrice: 3.50,
+    currentPrice: 3.50,
+    initialStock: 100,
     stock: 100,
-    sales_count: 0,
-    is_active: true
+    salesCount: 0,
+    isActive: true
   },
   {
     name: 'Rosé (verre)',
     category: 'cocktail',
     description: 'Rosé au verre',
-    base_price: 3.50,
-    current_price: 3.50,
-    initial_stock: 100,
+    basePrice: 3.50,
+    currentPrice: 3.50,
+    initialStock: 100,
     stock: 100,
-    sales_count: 0,
-    is_active: true
+    salesCount: 0,
+    isActive: true
   },
   // Softs
   {
     name: 'Soft classique',
     category: 'soft',
     description: 'Boisson non alcoolisée',
-    base_price: 2.00,
-    current_price: 2.00,
-    initial_stock: 80,
+    basePrice: 2.00,
+    currentPrice: 2.00,
+    initialStock: 80,
     stock: 80,
-    sales_count: 0,
-    is_active: true
+    salesCount: 0,
+    isActive: true
   },
   {
     name: 'RedBull',
     category: 'soft',
     description: 'Boisson énergisante',
-    base_price: 3.00,
-    current_price: 3.00,
-    initial_stock: 50,
+    basePrice: 3.00,
+    currentPrice: 3.00,
+    initialStock: 50,
     stock: 50,
-    sales_count: 0,
-    is_active: true
+    salesCount: 0,
+    isActive: true
   },
   {
     name: 'Eau',
     category: 'soft',
     description: 'Eau plate',
-    base_price: 1.00,
-    current_price: 1.00,
-    initial_stock: 100,
+    basePrice: 1.00,
+    currentPrice: 1.00,
+    initialStock: 100,
     stock: 100,
-    sales_count: 0,
-    is_active: true
+    salesCount: 0,
+    isActive: true
   },
   // Écocup
   {
     name: 'Écocup',
     category: 'other',
     description: 'Écocup non remboursable',
-    base_price: 1.00,
-    current_price: 1.00,
-    initial_stock: 200,
+    basePrice: 1.00,
+    currentPrice: 1.00,
+    initialStock: 200,
     stock: 200,
-    sales_count: 0,
-    is_active: true
+    salesCount: 0,
+    isActive: true
   }
 ];
 
@@ -185,11 +185,11 @@ async function quickInit() {
       // Créer l'entrée d'historique des prix
       await PriceHistory.create({
         productId: product.id,
-        price: product.current_price,
-        salesCount: product.sales_count
+        price: product.currentPrice,
+        salesCount: product.salesCount
       });
 
-      console.log(`✅ ${product.name} créé - ${product.current_price}€`);
+      console.log(`✅ ${product.name} créé - ${product.currentPrice}€`);
     }
 
     console.log(`\n🎉 ${realProducts.length} produits créés avec succès !`);
