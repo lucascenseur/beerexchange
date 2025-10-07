@@ -180,6 +180,98 @@ router.get('/products', async (req, res) => {
   }
 });
 
+// Route pour importer les produits SumUp dans Beer Exchange
+router.post('/import-products', async (req, res) => {
+  try {
+    const activeToken = await SumUpToken.getActiveToken();
+    if (!activeToken) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentification SumUp requise'
+      });
+    }
+
+    console.log('📦 Début import des produits SumUp...');
+    
+    // Charger le token dans le service
+    await sumupService.loadTokens();
+    
+    // Récupérer les produits SumUp
+    const sumupProducts = await sumupService.getProducts();
+    
+    if (!sumupProducts || sumupProducts.length === 0) {
+      return res.json({
+        success: true,
+        message: 'Aucun produit trouvé dans SumUp',
+        imported: 0,
+        products: []
+      });
+    }
+
+    // Importer les produits dans Beer Exchange
+    const Product = require('../models/Product');
+    const importedProducts = [];
+
+    for (const sumupProduct of sumupProducts) {
+      try {
+        // Vérifier si le produit existe déjà
+        const existingProduct = await Product.findOne({
+          where: { name: sumupProduct.name }
+        });
+
+        if (existingProduct) {
+          // Mettre à jour le produit existant
+          await existingProduct.update({
+            base_price: parseFloat(sumupProduct.price) || existingProduct.base_price,
+            current_price: parseFloat(sumupProduct.price) || existingProduct.current_price,
+            description: sumupProduct.description || existingProduct.description
+          });
+          console.log(`✅ Produit mis à jour: ${sumupProduct.name}`);
+        } else {
+          // Créer un nouveau produit
+          const newProduct = await Product.create({
+            name: sumupProduct.name,
+            description: sumupProduct.description || '',
+            category: 'other', // Catégorie par défaut
+            base_price: parseFloat(sumupProduct.price) || 0,
+            current_price: parseFloat(sumupProduct.price) || 0,
+            stock: 999, // Stock illimité pour la soirée
+            initial_stock: 999,
+            sales_count: 0,
+            is_active: true
+          });
+          console.log(`✅ Nouveau produit créé: ${sumupProduct.name}`);
+        }
+
+        importedProducts.push({
+          name: sumupProduct.name,
+          price: sumupProduct.price,
+          description: sumupProduct.description
+        });
+
+      } catch (productError) {
+        console.error(`❌ Erreur import produit ${sumupProduct.name}:`, productError);
+      }
+    }
+
+    console.log(`🎉 Import terminé: ${importedProducts.length} produits traités`);
+
+    res.json({
+      success: true,
+      message: `Import réussi: ${importedProducts.length} produits traités`,
+      imported: importedProducts.length,
+      products: importedProducts
+    });
+
+  } catch (error) {
+    console.error('❌ Erreur import produits SumUp:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de l\'import des produits'
+    });
+  }
+});
+
 // Route pour créer un produit dans SumUp
 router.post('/products', async (req, res) => {
   try {

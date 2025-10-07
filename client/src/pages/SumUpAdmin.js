@@ -61,6 +61,23 @@ const SumUpAdmin = () => {
     }
   };
 
+  // Importer les produits SumUp dans Beer Exchange
+  const importSumUpProducts = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.post('/api/sumup/import-products');
+      toast.success(`Import réussi: ${response.data.imported} produits traités`);
+      
+      // Rafraîchir la liste des produits
+      fetchSumUpProducts();
+    } catch (error) {
+      console.error('Erreur import produits SumUp:', error);
+      toast.error('Erreur lors de l\'import des produits SumUp');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Démarrer l'authentification SumUp
   const startSumUpAuth = async () => {
     try {
@@ -283,14 +300,25 @@ const SumUpAdmin = () => {
               <CreditCard className="w-6 h-6" />
               Produits SumUp ({sumupProducts.length})
             </h3>
-            <button
-              onClick={fetchSumUpProducts}
-              disabled={loading}
-              className="px-4 py-2 bg-beer-gold text-purple-900 rounded-lg hover:bg-yellow-400 transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              Actualiser
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={fetchSumUpProducts}
+                disabled={loading}
+                className="px-4 py-2 bg-beer-gold text-purple-900 rounded-lg hover:bg-yellow-400 transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                Actualiser
+              </button>
+              
+              <button
+                onClick={importSumUpProducts}
+                disabled={loading || sumupProducts.length === 0}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
+              >
+                <Download className="w-4 h-4" />
+                Importer
+              </button>
+            </div>
           </div>
 
           {loading ? (

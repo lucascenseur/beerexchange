@@ -23,7 +23,7 @@ class SumUpServiceReal {
       response_type: 'code',
       client_id: this.clientId,
       redirect_uri: this.redirectUri,
-      scope: 'payments',
+      scope: 'payments products',
       state: state || crypto.randomBytes(16).toString('hex')
     });
 
@@ -165,15 +165,28 @@ class SumUpServiceReal {
     }
   }
 
-  // Récupérer le catalogue de produits (SumUp n'a pas d'API publique pour cela)
+  // Récupérer le catalogue de produits
   async getProducts() {
     try {
-      console.log('📦 SumUp ne fournit pas d\'API publique pour récupérer les produits du catalogue');
-      console.log('💡 Les produits doivent être gérés via l\'interface SumUp ou l\'API privée');
-      return [];
+      console.log('📦 Tentative de récupération des produits SumUp...');
+      
+      // Essayer l'endpoint des produits
+      const response = await this.makeAuthenticatedRequest('GET', '/v0.1/me/products');
+      console.log('✅ Produits SumUp récupérés:', response);
+      return response;
     } catch (error) {
-      console.error('❌ Erreur lors de la récupération des produits SumUp:', error.message);
-      throw error;
+      if (error.response?.status === 403) {
+        console.log('⚠️ Scope "products" requis pour récupérer les produits SumUp');
+        console.log('💡 Activez le scope "products" dans votre dashboard SumUp');
+        return [];
+      } else if (error.response?.status === 404) {
+        console.log('📦 Endpoint produits non disponible dans l\'API SumUp');
+        console.log('💡 Les produits doivent être gérés via l\'interface SumUp');
+        return [];
+      } else {
+        console.error('❌ Erreur lors de la récupération des produits SumUp:', error.message);
+        return [];
+      }
     }
   }
 
