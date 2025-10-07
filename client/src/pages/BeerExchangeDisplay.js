@@ -8,7 +8,6 @@ const BeerExchangeDisplay = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [tradingPeriod] = useState(1);
   const [priceChanges, setPriceChanges] = useState({});
   const [priceHistory, setPriceHistory] = useState({});
   const [salesLogs, setSalesLogs] = useState([]);
@@ -395,13 +394,10 @@ const BeerExchangeDisplay = () => {
     <div className="h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-8 py-4 border-b border-slate-700">
-        {/* Trading Period */}
+        {/* 3iS VERTIGO */}
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
-            <span className="text-white text-lg">Trading Period</span>
-            <div className="bg-orange-400 text-slate-900 rounded-full w-8 h-8 flex items-center justify-center font-bold">
-              {tradingPeriod}
-            </div>
+            <span className="text-white text-lg font-bold">3iS VERTIGO</span>
             <Beer className="w-5 h-5 text-green-400" />
           </div>
         </div>
