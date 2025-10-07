@@ -217,7 +217,7 @@ const MobileCashier = () => {
       </div>
 
       {/* Produits - Plein écran */}
-      <div className="h-full overflow-y-auto pb-20 p-4">
+      <div className="h-full overflow-y-auto pb-24 p-4">
         {/* Debug info */}
         {!loading && products.length === 0 && (
           <div className="text-center py-8 text-red-400">
@@ -274,12 +274,12 @@ const MobileCashier = () => {
       </div>
 
       {/* Panier flottant en bas */}
-      <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-sm border-t border-slate-700 p-4 z-40">
+      <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-sm border-t border-slate-700 p-3 z-40">
         <button
           onClick={() => setShowCart(!showCart)}
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center space-x-3 transition-colors duration-200"
+          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors duration-200 text-sm"
         >
-          <ShoppingCart className="w-6 h-6" />
+          <ShoppingCart className="w-5 h-5" />
           <span>Panier ({getTotalItems()}) - {getTotal().toFixed(2)}€</span>
         </button>
       </div>
