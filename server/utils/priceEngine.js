@@ -92,6 +92,8 @@ class PriceEngine {
           const priceChange = this.calculatePriceChangeForSale(product, soldProductId, isSameProductType);
           const newPrice = Math.max(0.01, Math.round((parseFloat(product.currentPrice) + priceChange) * 100) / 100);
           
+          console.log(`🔍 Debug prix: ${product.name} - Changement: ${priceChange}€ - Nouveau prix: ${newPrice}€`);
+          
           if (Math.abs(priceChange) > 0.001) { // Seuil de 0.001€ pour éviter les micro-changements
             // Sauvegarder l'historique des prix
             await PriceHistory.create({
@@ -245,12 +247,16 @@ class PriceEngine {
 
   // Calculer le changement de prix pour une vente
   calculatePriceChangeForSale(product, soldProductId, isSameProductType) {
+    console.log(`🔍 calculatePriceChangeForSale: ${product.name} (ID: ${product.id}) vs vendu (ID: ${soldProductId}) - Même type: ${isSameProductType}`);
+    
     // Si c'est le même produit ou le même type de produit vendu
     if (product.id === soldProductId || isSameProductType) {
       // Augmenter le prix de 10 centimes par vente
+      console.log(`📈 ${product.name}: +0.10€ (produit vendu ou même type)`);
       return 0.10;
     } else {
       // Diminuer le prix de 0,5 centime par vente pour les autres produits
+      console.log(`📉 ${product.name}: -0.005€ (autre produit)`);
       return -0.005;
     }
   }
