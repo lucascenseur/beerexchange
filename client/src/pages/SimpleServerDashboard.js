@@ -9,7 +9,8 @@ import {
   Filter,
   Search,
   RefreshCw,
-  ArrowLeft
+  ArrowLeft,
+  ShoppingCart
 } from 'lucide-react';
 import { useSocket } from '../contexts/SocketContext';
 import axios from 'axios';
@@ -173,12 +174,21 @@ const SimpleServerDashboard = () => {
           </div>
         </div>
         
-        <button
-          onClick={fetchProducts}
-          className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
-        >
-          <RefreshCw className="w-5 h-5 text-white" />
-        </button>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => navigate('/cashier')}
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center space-x-2 transition-colors"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            <span>Caisse</span>
+          </button>
+          <button
+            onClick={fetchProducts}
+            className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+          >
+            <RefreshCw className="w-5 h-5 text-white" />
+          </button>
+        </div>
       </div>
 
       {/* Statistiques */}

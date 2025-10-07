@@ -9,6 +9,7 @@ import SimpleLogin from './pages/SimpleLogin';
 import SimpleServerDashboard from './pages/SimpleServerDashboard';
 import SimpleAdminDashboard from './pages/SimpleAdminDashboard';
 import SumUpAdmin from './pages/SumUpAdmin';
+import CashierInterface from './pages/CashierInterface';
 
 function App() {
   return (
@@ -29,6 +30,12 @@ function App() {
               <Route 
                 path="/server/dashboard" 
                 element={<SimpleServerDashboard />}
+              />
+              
+              {/* Interface caisse */}
+              <Route 
+                path="/cashier" 
+                element={<CashierInterface />}
               />
               
                   {/* Interface administrateur */}

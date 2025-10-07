@@ -23,6 +23,11 @@ const BeerExchangeDisplay = () => {
 
   // Ajouter un log de vente
   const addSalesLog = (productName, quantity, price) => {
+    // Exclure l'écocup des logs de vente
+    if (productName.toLowerCase().includes('écocup') || productName.toLowerCase().includes('ecocup')) {
+      return;
+    }
+
     const now = Date.now();
     const log = {
       id: `${productName}-${quantity}-${now}`, // ID unique basé sur le contenu
@@ -55,6 +60,11 @@ const BeerExchangeDisplay = () => {
 
   // Ajouter une animation de vente sur un produit spécifique
   const addProductSaleAnimation = (productId, productName, quantity, price) => {
+    // Exclure l'écocup des animations de vente
+    if (productName.toLowerCase().includes('écocup') || productName.toLowerCase().includes('ecocup')) {
+      return;
+    }
+
     const animationId = `${productId}-${Date.now()}`;
     const now = Date.now();
     
@@ -107,15 +117,21 @@ const BeerExchangeDisplay = () => {
 
   // Calculer les statistiques quotidiennes
   const calculateDailyStats = (products) => {
-    const totalSales = products.reduce((sum, product) => sum + (product.salesCount || 0), 0);
-    const totalRevenue = products.reduce((sum, product) => {
+    // Exclure l'écocup des statistiques
+    const productsWithoutEcocup = products.filter(product => 
+      !product.name.toLowerCase().includes('écocup') && 
+      !product.name.toLowerCase().includes('ecocup')
+    );
+
+    const totalSales = productsWithoutEcocup.reduce((sum, product) => sum + (product.salesCount || 0), 0);
+    const totalRevenue = productsWithoutEcocup.reduce((sum, product) => {
       const sales = product.salesCount || 0;
       const price = parseFloat(product.currentPrice || 0);
       return sum + (sales * price);
     }, 0);
 
-    // Top 3 des produits les plus vendus
-    const topProducts = products
+    // Top 3 des produits les plus vendus (sans écocup)
+    const topProducts = productsWithoutEcocup
       .filter(product => (product.salesCount || 0) > 0)
       .sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0))
       .slice(0, 3)
@@ -494,7 +510,7 @@ const BeerExchangeDisplay = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex h-full">
+      <div className="flex h-full pb-16">
         {/* Left Column */}
         <div className="flex-1 border-r border-slate-700">
           <div className="h-full overflow-y-auto">
@@ -679,7 +695,7 @@ const BeerExchangeDisplay = () => {
       </div>
 
       {/* Barre de logs des ventes */}
-      <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-sm border-t border-slate-700 p-2 z-40">
+      <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-sm border-t border-slate-700 p-2 z-40 max-h-16 overflow-hidden">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2 text-green-400 font-mono text-sm whitespace-nowrap">
             <Beer className="w-4 h-4" />
