@@ -275,29 +275,6 @@ const BeerExchangeDisplay = () => {
   const leftColumn = validProducts.filter((_, index) => index % 2 === 0);
   const rightColumn = validProducts.filter((_, index) => index % 2 === 1);
 
-  // Fonction pour obtenir l'icône de tendance
-  const getTrendIcon = (trend) => {
-    switch (trend) {
-      case 'up':
-        return <TrendingUp className="w-4 h-4" />;
-      case 'down':
-        return <TrendingDown className="w-4 h-4" />;
-      default:
-        return <Minus className="w-4 h-4" />;
-    }
-  };
-
-  // Fonction pour obtenir la couleur du prix
-  const getPriceColor = (trend) => {
-    switch (trend) {
-      case 'up':
-        return 'text-green-400';
-      case 'down':
-        return 'text-red-400';
-      default:
-        return 'text-white';
-    }
-  };
 
   // Fonction pour obtenir la couleur de fond de la ligne
   const getRowBgColor = (index) => {
