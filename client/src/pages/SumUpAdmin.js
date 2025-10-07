@@ -12,8 +12,8 @@ import {
   ArrowLeft,
   Settings,
   Sync,
-  Play,
-  Pause
+  PlayCircle,
+  PauseCircle
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -524,7 +524,7 @@ const SumUpAdmin = () => {
               disabled={syncLoading || syncStatus?.isRunning}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
             >
-              <Play className="w-4 h-4" />
+              <PlayCircle className="w-4 h-4" />
               Démarrer auto-sync
             </button>
             
@@ -533,7 +533,7 @@ const SumUpAdmin = () => {
               disabled={syncLoading || !syncStatus?.isRunning}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
             >
-              <Pause className="w-4 h-4" />
+              <PauseCircle className="w-4 h-4" />
               Arrêter auto-sync
             </button>
             
