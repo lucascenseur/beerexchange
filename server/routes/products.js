@@ -253,6 +253,61 @@ router.get('/:id/stats', async (req, res) => {
   }
 });
 
+// Route pour obtenir les statistiques quotidiennes réelles
+router.get('/stats/daily', async (req, res) => {
+  try {
+    // Récupérer toutes les ventes d'aujourd'hui
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const sales = await Sale.findAll({
+      where: {
+        createdAt: {
+          [require('sequelize').Op.gte]: today,
+          [require('sequelize').Op.lt]: tomorrow
+        }
+      }
+    });
+    
+    // Calculer les statistiques réelles
+    const totalSales = sales.reduce((sum, sale) => sum + sale.quantity, 0);
+    const totalRevenue = sales.reduce((sum, sale) => sum + parseFloat(sale.totalAmount), 0);
+    
+    // Top 3 des produits les plus vendus
+    const productSales = {};
+    sales.forEach(sale => {
+      if (!productSales[sale.productName]) {
+        productSales[sale.productName] = { sales: 0, revenue: 0 };
+      }
+      productSales[sale.productName].sales += sale.quantity;
+      productSales[sale.productName].revenue += parseFloat(sale.totalAmount);
+    });
+    
+    const topProducts = Object.entries(productSales)
+      .map(([name, data]) => ({ name, sales: data.sales, revenue: data.revenue }))
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 3);
+    
+    res.json({
+      success: true,
+      stats: {
+        totalSales,
+        totalRevenue,
+        topProducts
+      }
+    });
+    
+  } catch (error) {
+    console.error('Erreur récupération statistiques quotidiennes:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Erreur serveur' 
+    });
+  }
+});
+
 // Route pour créer une vente
 router.post('/sales', async (req, res) => {
   try {
@@ -283,10 +338,18 @@ router.post('/sales', async (req, res) => {
     // Mettre à jour le produit
     const product = await Product.findByPk(product_id);
     if (product) {
+      // Capturer le prix AVANT la mise à jour pour le calcul du CA
+      const priceAtSale = parseFloat(product.currentPrice);
       const newSalesCount = (product.salesCount || 0) + parseInt(quantity);
+      
+      // Vérifier que le prix utilisé correspond au prix au moment de la vente
+      if (Math.abs(priceAtSale - parseFloat(price)) > 0.01) {
+        console.log(`⚠️ Prix de vente (${price}€) différent du prix actuel (${priceAtSale}€) - Utilisation du prix de vente`);
+      }
+      
       await product.update({ salesCount: newSalesCount });
       
-      console.log(`✅ Vente créée: ${quantity}x ${product_name} - Total: ${total_amount}€`);
+      console.log(`✅ Vente créée: ${quantity}x ${product_name} - Prix: ${priceAtSale}€ - Total: ${total_amount}€`);
       
       // Déclencher le système de bourse pour mettre à jour les prix
       try {

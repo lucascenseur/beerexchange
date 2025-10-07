@@ -115,7 +115,22 @@ const BeerExchangeDisplay = () => {
     }
   };
 
-  // Calculer les statistiques quotidiennes
+  // Récupérer les statistiques quotidiennes réelles depuis l'API
+  const fetchDailyStats = async () => {
+    try {
+      const response = await axios.get('/api/products/stats/daily');
+      if (response.data.success) {
+        setDailyStats(response.data.stats);
+        console.log('📊 Statistiques quotidiennes mises à jour:', response.data.stats);
+      }
+    } catch (error) {
+      console.error('Erreur récupération statistiques quotidiennes:', error);
+      // Fallback sur le calcul local si l'API échoue
+      calculateDailyStats(products);
+    }
+  };
+
+  // Calculer les statistiques quotidiennes (fallback)
   const calculateDailyStats = (products) => {
     // Exclure l'écocup des statistiques
     const productsWithoutEcocup = products.filter(product => 

@@ -81,8 +81,12 @@ const MobileCashier = () => {
       }
       
       const activeProducts = productsData.filter(product => 
-        product && product.isActive && product.currentPrice > 0
-      );
+        product && product.isActive && (product.currentPrice || 0) > 0
+      ).map(product => ({
+        ...product,
+        currentPrice: parseFloat(product.currentPrice || 0),
+        basePrice: parseFloat(product.basePrice || product.currentPrice || 0)
+      }));
       
       console.log('📦 Produits actifs:', activeProducts);
       setProducts(activeProducts);
@@ -138,7 +142,7 @@ const MobileCashier = () => {
 
   // Calculer le total
   const getTotal = () => {
-    return cart.reduce((total, item) => total + (item.currentPrice * item.quantity), 0);
+    return cart.reduce((total, item) => total + ((item.currentPrice || 0) * item.quantity), 0);
   };
 
   // Calculer le nombre total d'articles
@@ -156,9 +160,9 @@ const MobileCashier = () => {
       const sales = cart.map(item => ({
         product_id: item.id,
         product_name: item.name,
-        price: item.currentPrice,
+        price: item.currentPrice || 0,
         quantity: item.quantity,
-        total_amount: item.currentPrice * item.quantity,
+        total_amount: (item.currentPrice || 0) * item.quantity,
         server_id: 1, // ID du serveur par défaut
         server_name: serverName,
         notes: `Vente mobile - ${new Date().toLocaleString()}`
@@ -263,7 +267,7 @@ const MobileCashier = () => {
                     <div className="flex items-center justify-between mb-2">
                       <Beer className="w-6 h-6 text-green-400" />
                       <span className="text-green-400 font-bold text-lg">
-                        {product.currentPrice.toFixed(2)}€
+                        {(product.currentPrice || 0).toFixed(2)}€
                       </span>
                     </div>
                     
