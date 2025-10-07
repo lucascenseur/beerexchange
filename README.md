@@ -47,64 +47,66 @@ Un site web complet et dynamique pour la gestion des boissons lors de soirées �
 
 ## 🚀 Installation
 
-### Prérequis
+### ⚡ Installation Rapide (5 minutes)
+
+```bash
+# Cloner et installer automatiquement
+git clone https://github.com/lucascenseur/beerexchange.git
+cd beerexchange
+chmod +x start.sh
+./start.sh
+```
+
+### 📋 Installation Manuelle
+
+#### Prérequis
 - Node.js (version 16 ou supérieure)
 - MongoDB (local ou cloud)
 - npm ou yarn
 
-### 1. Cloner le projet
+#### Étapes
+
+1. **Cloner le projet**
 ```bash
-git clone <repository-url>
-cd beer-exchange
+git clone https://github.com/lucascenseur/beerexchange.git
+cd beerexchange
 ```
 
-### 2. Installer les dépendances
+2. **Installer les dépendances**
 ```bash
-# Installer toutes les dépendances (racine, serveur et client)
 npm run install-all
 ```
 
-### 3. Configuration de l'environnement
+3. **Configuration de l'environnement**
 ```bash
-# Copier le fichier d'exemple
 cp server/env.example server/.env
-
 # Éditer le fichier .env avec vos paramètres
-nano server/.env
 ```
 
-Variables d'environnement requises :
-```env
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/beer-exchange
-JWT_SECRET=your-super-secret-jwt-key-here
-JWT_EXPIRE=24h
-NODE_ENV=development
-
-# Utilisateurs par défaut (à changer en production)
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=admin123
-SERVER_PASSWORD=server123
-```
-
-### 4. Initialiser la base de données
+4. **Initialiser la base de données**
 ```bash
-# Initialiser les utilisateurs et produits de démonstration
 cd server
 node scripts/initUsers.js all
+cd ..
 ```
 
-### 5. Démarrer l'application
+5. **Démarrer l'application**
 ```bash
-# Démarrer le serveur et le client en mode développement
 npm run dev
 ```
 
-L'application sera accessible sur :
+### 🌐 Accès aux interfaces
+
 - **Interface publique** : http://localhost:3000
 - **Interface serveur** : http://localhost:3000/server/login
 - **Interface admin** : http://localhost:3000/admin/login
 - **API** : http://localhost:5000/api
+
+### 📚 Guides détaillés
+
+- **[QUICKSTART.md](QUICKSTART.md)** - Installation en 3 étapes
+- **[INSTALLATION.md](INSTALLATION.md)** - Guide complet avec dépannage
+- **[DEMO.md](DEMO.md)** - Guide de démonstration
 
 ## 🔑 Comptes de Démonstration
 
