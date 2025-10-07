@@ -422,10 +422,10 @@ const MobileCashier = () => {
                         
                         <div className="text-right">
                           <p className="text-green-400 font-bold">
-                            {(item.currentPrice * item.quantity).toFixed(2)}€
+                            {((item.currentPrice || 0) * item.quantity).toFixed(2)}€
                           </p>
                           <p className="text-slate-400 text-xs">
-                            {item.currentPrice.toFixed(2)}€ × {item.quantity}
+                            {(item.currentPrice || 0).toFixed(2)}€ × {item.quantity}
                           </p>
                         </div>
                       </div>
