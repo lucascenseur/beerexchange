@@ -353,6 +353,7 @@ router.post('/sales', async (req, res) => {
       
       // Déclencher le système de bourse pour mettre à jour les prix
       try {
+        console.log(`🔧 ioInstance disponible:`, !!ioInstance);
         const priceEngine = require('../utils/priceEngine');
         // Passer l'instance Socket.io au moteur de prix
         await priceEngine.updatePricesAfterSale(ioInstance, product_id, parseInt(quantity));
