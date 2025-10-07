@@ -8,8 +8,8 @@ import { SocketProvider } from './contexts/SocketContext';
 import PublicDisplay from './pages/PublicDisplay';
 import PublicDisplayCompact from './pages/PublicDisplayCompact';
 import SimpleLogin from './pages/SimpleLogin';
-import ServerDashboard from './pages/ServerDashboard';
-import AdminDashboard from './pages/AdminDashboard';
+import SimpleServerDashboard from './pages/SimpleServerDashboard';
+import SimpleAdminDashboard from './pages/SimpleAdminDashboard';
 
 // Composants
 import ProtectedRoute from './components/ProtectedRoute';
@@ -34,13 +34,13 @@ function App() {
               {/* Interface serveur */}
               <Route 
                 path="/server/dashboard" 
-                element={<ServerDashboard />}
+                element={<SimpleServerDashboard />}
               />
               
               {/* Interface administrateur */}
               <Route 
                 path="/admin/dashboard" 
-                element={<AdminDashboard />}
+                element={<SimpleAdminDashboard />}
               />
               
               {/* Redirection par défaut */}
