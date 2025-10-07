@@ -61,7 +61,9 @@ const SumUpAdmin = () => {
       setSumupProducts(response.data.products || []);
     } catch (error) {
       console.error('Erreur récupération produits SumUp:', error);
-      toast.error('Erreur lors de la récupération des produits SumUp');
+      // Ne pas afficher d'erreur car l'API SumUp ne permet pas de récupérer les produits
+      setSumupProducts([]);
+      console.log('ℹ️ Aucun produit SumUp trouvé (normal - API limitée)');
     } finally {
       setLoading(false);
     }
@@ -78,7 +80,9 @@ const SumUpAdmin = () => {
       fetchSumUpProducts();
     } catch (error) {
       console.error('Erreur import produits SumUp:', error);
-      toast.error('Erreur lors de l\'import des produits SumUp');
+      // Ne pas afficher d'erreur car l'API SumUp ne permet pas de récupérer les produits
+      toast.info('Aucun produit SumUp à importer (API limitée)');
+      setSumupProducts([]);
     } finally {
       setLoading(false);
     }
@@ -377,6 +381,13 @@ const SumUpAdmin = () => {
               <p>Synchronisation en cours...</p>
             </div>
           )}
+
+          <div className="mt-4 p-3 bg-blue-500/20 border border-blue-500/30 rounded-lg">
+            <p className="text-blue-300 text-sm">
+              <strong>ℹ️ Note importante :</strong> L'API SumUp ne permet pas de récupérer les produits existants. 
+              Utilisez l'ajout manuel ci-dessous pour créer vos produits.
+            </p>
+          </div>
         </div>
       )}
 
