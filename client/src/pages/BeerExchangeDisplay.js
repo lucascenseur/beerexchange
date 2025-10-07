@@ -70,7 +70,7 @@ const BeerExchangeDisplay = () => {
   };
 
   // Créer un mini-graphique SVG pour l'historique des prix
-  const createMiniChart = (history, trend) => {
+  const createMiniChart = (history, currentPrice, basePrice) => {
     if (!history || history.length === 0) return null;
     
     const width = 60;
@@ -88,12 +88,9 @@ const BeerExchangeDisplay = () => {
       return `${x},${y}`;
     }).join(' ');
     
-    // Couleur basée sur la tendance générale du graphique
-    const firstPrice = history[0]?.price || 0;
-    const lastPrice = history[history.length - 1]?.price || 0;
-    const chartTrend = lastPrice > firstPrice ? 'up' : lastPrice < firstPrice ? 'down' : 'stable';
-    
-    const color = chartTrend === 'up' ? '#10B981' : chartTrend === 'down' ? '#EF4444' : '#6B7280';
+    // Couleur basée sur la différence avec le prix de base
+    const priceDiff = currentPrice - basePrice;
+    const color = priceDiff > 0 ? '#10B981' : priceDiff < 0 ? '#EF4444' : '#6B7280';
     
     return (
       <svg width={width} height={height} className="opacity-80">
@@ -108,7 +105,7 @@ const BeerExchangeDisplay = () => {
         {/* Point final pour marquer le prix actuel */}
         <circle
           cx={padding + (width - 2 * padding)}
-          cy={padding + ((maxPrice - lastPrice) / priceRange) * (height - 2 * padding)}
+          cy={padding + ((maxPrice - currentPrice) / priceRange) * (height - 2 * padding)}
           r="1.5"
           fill={color}
         />
@@ -125,6 +122,30 @@ const BeerExchangeDisplay = () => {
   }, []);
 
   // L'historique se met à jour seulement quand les prix changent via Socket.io
+
+  // Fonction pour obtenir l'icône de tendance basée sur le prix de base
+  const getTrendIcon = (currentPrice, basePrice) => {
+    const priceDiff = currentPrice - basePrice;
+    if (priceDiff > 0) {
+      return <TrendingUp className="w-5 h-5 text-green-500" />;
+    } else if (priceDiff < 0) {
+      return <TrendingDown className="w-5 h-5 text-red-500" />;
+    } else {
+      return <Minus className="w-5 h-5 text-gray-400" />;
+    }
+  };
+
+  // Fonction pour obtenir la couleur basée sur le prix de base
+  const getPriceColor = (currentPrice, basePrice) => {
+    const priceDiff = currentPrice - basePrice;
+    if (priceDiff > 0) {
+      return 'text-green-400';
+    } else if (priceDiff < 0) {
+      return 'text-red-400';
+    } else {
+      return 'text-white';
+    }
+  };
 
   // Nettoyer les anciens logs automatiquement
   useEffect(() => {
@@ -148,8 +169,8 @@ const BeerExchangeDisplay = () => {
           ...product,
           currentPrice: parseFloat(product.currentPrice || 0),
           previousPrice: parseFloat(product.currentPrice || 0),
-          priceChange: 0,
-          trend: 'stable'
+          basePrice: parseFloat(product.basePrice || product.currentPrice || 0),
+          priceChange: 0
         }));
       
       setProducts(productsWithChanges);
@@ -183,8 +204,8 @@ const BeerExchangeDisplay = () => {
         if (product && product.id === updatedProduct.id) {
           const currentPrice = parseFloat(product.currentPrice || 0);
           const newPrice = parseFloat(updatedProduct.currentPrice || 0);
+          const basePrice = parseFloat(product.basePrice || newPrice);
           const priceChange = newPrice - currentPrice;
-          const trend = priceChange > 0 ? 'up' : priceChange < 0 ? 'down' : 'stable';
           
           // Détecter une vente (augmentation du salesCount)
           const currentSales = product.salesCount || 0;
@@ -213,8 +234,8 @@ const BeerExchangeDisplay = () => {
             ...updatedProduct,
             currentPrice: newPrice,
             previousPrice: currentPrice,
-            priceChange,
-            trend
+            basePrice: basePrice,
+            priceChange
           };
         }
         return product;
@@ -226,8 +247,8 @@ const BeerExchangeDisplay = () => {
         ...newProduct,
         currentPrice: parseFloat(newProduct.currentPrice || 0),
         previousPrice: parseFloat(newProduct.currentPrice || 0),
-        priceChange: 0,
-        trend: 'stable'
+        basePrice: parseFloat(newProduct.basePrice || newProduct.currentPrice || 0),
+        priceChange: 0
       }]);
     });
 
@@ -362,7 +383,7 @@ const BeerExchangeDisplay = () => {
                       initial={{ scale: 1.2, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ duration: 0.3 }}
-                      className={`text-2xl font-bold ${getPriceColor(product.trend)}`}
+                      className={`text-2xl font-bold ${getPriceColor(product.currentPrice, product.basePrice)}`}
                     >
                       ${parseFloat(product.currentPrice || 0).toFixed(2)}
                     </motion.div>
@@ -372,9 +393,9 @@ const BeerExchangeDisplay = () => {
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ duration: 0.2 }}
-                      className={getPriceColor(product.trend)}
+                      className={getPriceColor(product.currentPrice, product.basePrice)}
                     >
-                      {getTrendIcon(product.trend)}
+                      {getTrendIcon(product.currentPrice, product.basePrice)}
                     </motion.div>
                   </div>
                 </div>
@@ -382,15 +403,12 @@ const BeerExchangeDisplay = () => {
                 {/* Historique des prix */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <span className="text-slate-500 text-xs">1h:</span>
-                    <span className={`text-xs font-medium ${getPriceColor(product.trend)}`}>
+                    <span className="text-slate-500 text-xs">Base:</span>
+                    <span className={`text-xs font-medium ${getPriceColor(product.currentPrice, product.basePrice)}`}>
                       {(() => {
-                        const history = priceHistory[product.id];
-                        if (!history || history.length < 2) return '0.00€';
-                        
                         const currentPrice = product.currentPrice || 0;
-                        const hourAgoPrice = history[0]?.price || currentPrice;
-                        const change = currentPrice - hourAgoPrice;
+                        const basePrice = product.basePrice || currentPrice;
+                        const change = currentPrice - basePrice;
                         const sign = change > 0 ? '+' : change < 0 ? '-' : '';
                         
                         return `${sign}${Math.abs(change).toFixed(2)}€`;
@@ -400,7 +418,7 @@ const BeerExchangeDisplay = () => {
                   
                   <div className="flex items-center space-x-2">
                     <span className="text-slate-500 text-xs">Graph:</span>
-                    {createMiniChart(priceHistory[product.id], product.trend)}
+                    {createMiniChart(priceHistory[product.id], product.currentPrice, product.basePrice)}
                   </div>
                 </div>
               </motion.div>
@@ -433,7 +451,7 @@ const BeerExchangeDisplay = () => {
                       initial={{ scale: 1.2, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ duration: 0.3 }}
-                      className={`text-2xl font-bold ${getPriceColor(product.trend)}`}
+                      className={`text-2xl font-bold ${getPriceColor(product.currentPrice, product.basePrice)}`}
                     >
                       ${parseFloat(product.currentPrice || 0).toFixed(2)}
                     </motion.div>
@@ -443,9 +461,9 @@ const BeerExchangeDisplay = () => {
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ duration: 0.2 }}
-                      className={getPriceColor(product.trend)}
+                      className={getPriceColor(product.currentPrice, product.basePrice)}
                     >
-                      {getTrendIcon(product.trend)}
+                      {getTrendIcon(product.currentPrice, product.basePrice)}
                     </motion.div>
                   </div>
                 </div>
@@ -453,15 +471,12 @@ const BeerExchangeDisplay = () => {
                 {/* Historique des prix */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <span className="text-slate-500 text-xs">1h:</span>
-                    <span className={`text-xs font-medium ${getPriceColor(product.trend)}`}>
+                    <span className="text-slate-500 text-xs">Base:</span>
+                    <span className={`text-xs font-medium ${getPriceColor(product.currentPrice, product.basePrice)}`}>
                       {(() => {
-                        const history = priceHistory[product.id];
-                        if (!history || history.length < 2) return '0.00€';
-                        
                         const currentPrice = product.currentPrice || 0;
-                        const hourAgoPrice = history[0]?.price || currentPrice;
-                        const change = currentPrice - hourAgoPrice;
+                        const basePrice = product.basePrice || currentPrice;
+                        const change = currentPrice - basePrice;
                         const sign = change > 0 ? '+' : change < 0 ? '-' : '';
                         
                         return `${sign}${Math.abs(change).toFixed(2)}€`;
@@ -471,7 +486,7 @@ const BeerExchangeDisplay = () => {
                   
                   <div className="flex items-center space-x-2">
                     <span className="text-slate-500 text-xs">Graph:</span>
-                    {createMiniChart(priceHistory[product.id], product.trend)}
+                    {createMiniChart(priceHistory[product.id], product.currentPrice, product.basePrice)}
                   </div>
                 </div>
               </motion.div>
