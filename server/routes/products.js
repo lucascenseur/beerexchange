@@ -139,6 +139,49 @@ router.post('/:id/sell', async (req, res) => {
   }
 });
 
+// Route pour mettre à jour un produit (admin seulement)
+router.put('/:id', async (req, res) => {
+  try {
+    const product = await Product.findByPk(req.params.id);
+    
+    if (!product) {
+      return res.status(404).json({ message: 'Produit non trouvé' });
+    }
+    
+    // Mettre à jour le produit avec les données reçues
+    await product.update(req.body);
+    
+    // Émettre l'événement Socket.io pour mise à jour temps réel
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('product-updated', product);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Produit mis à jour avec succès',
+      product: {
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        category: product.category,
+        currentPrice: parseFloat(product.currentPrice),
+        stock: product.stock,
+        salesCount: product.salesCount,
+        isActive: product.isActive,
+        image: product.image
+      }
+    });
+    
+  } catch (error) {
+    console.error('Erreur mise à jour produit:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Erreur serveur lors de la mise à jour' 
+    });
+  }
+});
+
 // Route pour obtenir l'historique des prix d'un produit
 router.get('/:id/price-history', async (req, res) => {
   try {

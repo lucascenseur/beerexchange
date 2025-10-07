@@ -36,10 +36,78 @@ const SimpleAdminDashboard = () => {
   const { onProductUpdate, onProductCreated, onProductDeleted } = useSocket();
   const navigate = useNavigate();
 
+  // Fonction pour mettre à jour le prix d'un produit
+  const handlePriceUpdate = async (productId, newPrice) => {
+    try {
+      console.log(`🔄 Mise à jour prix produit ${productId} vers ${newPrice}€`);
+      
+      const response = await axios.put(`/api/products/${productId}`, {
+        currentPrice: newPrice
+      });
+      
+      console.log('📡 Réponse API:', response.data);
+      
+      if (response.data.success) {
+        toast.success('Prix mis à jour !');
+        // Mettre à jour l'état local
+        setProducts(prev => prev.map(product => 
+          product.id === productId 
+            ? { ...product, currentPrice: newPrice }
+            : product
+        ));
+        setFilteredProducts(prev => prev.map(product => 
+          product.id === productId 
+            ? { ...product, currentPrice: newPrice }
+            : product
+        ));
+        console.log('✅ État local mis à jour');
+      } else {
+        toast.error('Erreur: ' + response.data.message);
+      }
+    } catch (error) {
+      console.error('❌ Erreur mise à jour prix:', error);
+      toast.error('Erreur lors de la mise à jour du prix: ' + error.message);
+    }
+  };
+
+  // Fonction pour mettre à jour le stock d'un produit
+  const handleStockUpdate = async (productId, newStock) => {
+    try {
+      const response = await axios.put(`/api/products/${productId}`, {
+        stock: newStock
+      });
+      
+      if (response.data.success) {
+        toast.success('Stock mis à jour !');
+        // Mettre à jour l'état local
+        setProducts(prev => prev.map(product => 
+          product.id === productId 
+            ? { ...product, stock: newStock }
+            : product
+        ));
+        setFilteredProducts(prev => prev.map(product => 
+          product.id === productId 
+            ? { ...product, stock: newStock }
+            : product
+        ));
+      }
+    } catch (error) {
+      console.error('Erreur mise à jour stock:', error);
+      toast.error('Erreur lors de la mise à jour du stock');
+    }
+  };
+
+  // Fonction pour rafraîchir les produits
+  const refreshProducts = async () => {
+    setLoading(true);
+    await fetchProducts();
+    setLoading(false);
+  };
+
   // Récupérer les produits
   const fetchProducts = async () => {
     try {
-      const response = await axios.get('/api/products/public');
+      const response = await axios.get('/api/products');
       setProducts(response.data.products);
       setFilteredProducts(response.data.products);
       
@@ -238,6 +306,15 @@ const SimpleAdminDashboard = () => {
             </option>
           ))}
         </select>
+        
+        <button
+          onClick={refreshProducts}
+          disabled={loading}
+          className="px-4 py-2 bg-beer-gold text-purple-900 rounded-lg hover:bg-yellow-400 transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Rafraîchir
+        </button>
       </div>
 
       {/* Liste des produits */}
