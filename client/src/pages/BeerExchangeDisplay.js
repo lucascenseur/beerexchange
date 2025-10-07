@@ -25,12 +25,15 @@ const BeerExchangeDisplay = () => {
   const fetchProducts = async () => {
     try {
       const response = await axios.get('/api/products/public');
-      const productsWithChanges = response.data.products.map(product => ({
-        ...product,
-        previousPrice: product.currentPrice,
-        priceChange: 0,
-        trend: 'stable'
-      }));
+      const productsWithChanges = response.data.products
+        .filter(product => product && product.id && product.name && product.currentPrice !== null && product.currentPrice !== undefined)
+        .map(product => ({
+          ...product,
+          currentPrice: product.currentPrice || 0,
+          previousPrice: product.currentPrice || 0,
+          priceChange: 0,
+          trend: 'stable'
+        }));
       setProducts(productsWithChanges);
     } catch (error) {
       console.error('Erreur récupération produits:', error);
@@ -42,9 +45,15 @@ const BeerExchangeDisplay = () => {
   // Écouter les mises à jour en temps réel
   useEffect(() => {
     const unsubscribeUpdate = onProductUpdate((updatedProduct) => {
+      if (!updatedProduct || !updatedProduct.id || updatedProduct.currentPrice === null || updatedProduct.currentPrice === undefined) {
+        return;
+      }
+      
       setProducts(prev => prev.map(product => {
-        if (product.id === updatedProduct.id) {
-          const priceChange = updatedProduct.currentPrice - product.currentPrice;
+        if (product && product.id === updatedProduct.id) {
+          const currentPrice = product.currentPrice || 0;
+          const newPrice = updatedProduct.currentPrice || 0;
+          const priceChange = newPrice - currentPrice;
           const trend = priceChange > 0 ? 'up' : priceChange < 0 ? 'down' : 'stable';
           
           // Animation de changement de prix
@@ -55,7 +64,7 @@ const BeerExchangeDisplay = () => {
 
           return {
             ...updatedProduct,
-            previousPrice: product.currentPrice,
+            previousPrice: currentPrice,
             priceChange,
             trend
           };
@@ -89,9 +98,12 @@ const BeerExchangeDisplay = () => {
     fetchProducts();
   }, []);
 
-  // Grouper les produits en deux colonnes
-  const leftColumn = products.filter((_, index) => index % 2 === 0);
-  const rightColumn = products.filter((_, index) => index % 2 === 1);
+  // Grouper les produits en deux colonnes (filtrer les produits valides)
+  const validProducts = products.filter(product => 
+    product && product.id && product.name && product.currentPrice !== null && product.currentPrice !== undefined
+  );
+  const leftColumn = validProducts.filter((_, index) => index % 2 === 0);
+  const rightColumn = validProducts.filter((_, index) => index % 2 === 1);
 
   // Fonction pour obtenir l'icône de tendance
   const getTrendIcon = (trend) => {
@@ -201,7 +213,7 @@ const BeerExchangeDisplay = () => {
                     transition={{ duration: 0.3 }}
                     className={`text-2xl font-bold ${getPriceColor(product.trend)}`}
                   >
-                    ${product.currentPrice.toFixed(2)}
+                    ${(product.currentPrice || 0).toFixed(2)}
                   </motion.div>
                   
                   <motion.div
@@ -244,7 +256,7 @@ const BeerExchangeDisplay = () => {
                     transition={{ duration: 0.3 }}
                     className={`text-2xl font-bold ${getPriceColor(product.trend)}`}
                   >
-                    ${product.currentPrice.toFixed(2)}
+                    ${(product.currentPrice || 0).toFixed(2)}
                   </motion.div>
                   
                   <motion.div
