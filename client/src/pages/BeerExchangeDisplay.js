@@ -10,8 +10,61 @@ const BeerExchangeDisplay = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [tradingPeriod] = useState(1);
   const [priceChanges, setPriceChanges] = useState({});
+  const [priceHistory, setPriceHistory] = useState({});
 
   const { onProductUpdate, onProductCreated, onProductDeleted } = useSocket();
+
+  // Générer un historique de prix simulé pour l'effet visuel
+  const generatePriceHistory = (currentPrice, basePrice) => {
+    const history = [];
+    const points = 8; // 8 points d'historique
+    
+    for (let i = points; i >= 0; i--) {
+      const variation = (Math.random() - 0.5) * 0.3; // Variation de ±15%
+      const price = currentPrice * (1 + variation);
+      history.push({
+        price: Math.max(0.1, price), // Prix minimum de 0.1€
+        time: new Date(Date.now() - i * 30000) // 30 secondes entre chaque point
+      });
+    }
+    
+    return history;
+  };
+
+  // Créer un mini-graphique SVG pour l'historique des prix
+  const createMiniChart = (history, trend) => {
+    if (!history || history.length === 0) return null;
+    
+    const width = 60;
+    const height = 20;
+    const padding = 2;
+    
+    const prices = history.map(h => h.price);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const priceRange = maxPrice - minPrice || 1;
+    
+    const points = history.map((h, index) => {
+      const x = padding + (index / (history.length - 1)) * (width - 2 * padding);
+      const y = padding + ((maxPrice - h.price) / priceRange) * (height - 2 * padding);
+      return `${x},${y}`;
+    }).join(' ');
+    
+    const color = trend === 'up' ? '#10B981' : trend === 'down' ? '#EF4444' : '#6B7280';
+    
+    return (
+      <svg width={width} height={height} className="opacity-70">
+        <polyline
+          points={points}
+          fill="none"
+          stroke={color}
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  };
 
   // Mise à jour de l'heure
   useEffect(() => {
@@ -34,7 +87,15 @@ const BeerExchangeDisplay = () => {
           priceChange: 0,
           trend: 'stable'
         }));
+      
       setProducts(productsWithChanges);
+      
+      // Générer l'historique des prix pour chaque produit
+      const historyData = {};
+      productsWithChanges.forEach(product => {
+        historyData[product.id] = generatePriceHistory(product.currentPrice, product.basePrice || product.currentPrice);
+      });
+      setPriceHistory(historyData);
     } catch (error) {
       console.error('Erreur récupération produits:', error);
     } finally {
@@ -61,6 +122,12 @@ const BeerExchangeDisplay = () => {
           setPriceChanges(prev => ({
             ...prev,
             [product.id]: { change: priceChange, timestamp: Date.now() }
+          }));
+
+          // Mettre à jour l'historique des prix
+          setPriceHistory(prev => ({
+            ...prev,
+            [product.id]: generatePriceHistory(newPrice, product.basePrice || newPrice)
           }));
 
           return {
@@ -197,35 +264,54 @@ const BeerExchangeDisplay = () => {
                 key={product.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className={`flex items-center justify-between px-6 py-4 border-b border-slate-700 ${getRowBgColor(index)}`}
+                className={`px-6 py-4 border-b border-slate-700 ${getRowBgColor(index)}`}
               >
-                <div className="flex-1">
-                  <h3 className="text-white text-lg font-medium">{product.name}</h3>
-                  {product.description && (
-                    <p className="text-slate-400 text-sm">{product.description}</p>
-                  )}
+                {/* Ligne principale */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex-1">
+                    <h3 className="text-white text-lg font-medium">{product.name}</h3>
+                    {product.description && (
+                      <p className="text-slate-400 text-sm">{product.description}</p>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <motion.div
+                      key={product.currentPrice}
+                      initial={{ scale: 1.2, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                      className={`text-2xl font-bold ${getPriceColor(product.trend)}`}
+                    >
+                      ${(product.currentPrice || 0).toFixed(2)}
+                    </motion.div>
+                    
+                    <motion.div
+                      key={`${product.id}-${product.trend}`}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                      className={getPriceColor(product.trend)}
+                    >
+                      {getTrendIcon(product.trend)}
+                    </motion.div>
+                  </div>
                 </div>
                 
-                <div className="flex items-center space-x-3">
-                  <motion.div
-                    key={product.currentPrice}
-                    initial={{ scale: 1.2, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    className={`text-2xl font-bold ${getPriceColor(product.trend)}`}
-                  >
-                    ${(product.currentPrice || 0).toFixed(2)}
-                  </motion.div>
+                {/* Historique des prix */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-slate-500 text-xs">24h:</span>
+                    <span className={`text-xs font-medium ${getPriceColor(product.trend)}`}>
+                      {product.trend === 'up' ? '+' : product.trend === 'down' ? '-' : ''}
+                      {Math.abs(product.priceChange || 0).toFixed(2)}€
+                    </span>
+                  </div>
                   
-                  <motion.div
-                    key={`${product.id}-${product.trend}`}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.2 }}
-                    className={getPriceColor(product.trend)}
-                  >
-                    {getTrendIcon(product.trend)}
-                  </motion.div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-slate-500 text-xs">Graph:</span>
+                    {createMiniChart(priceHistory[product.id], product.trend)}
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -240,35 +326,54 @@ const BeerExchangeDisplay = () => {
                 key={product.id}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className={`flex items-center justify-between px-6 py-4 border-b border-slate-700 ${getRowBgColor(index)}`}
+                className={`px-6 py-4 border-b border-slate-700 ${getRowBgColor(index)}`}
               >
-                <div className="flex-1">
-                  <h3 className="text-white text-lg font-medium">{product.name}</h3>
-                  {product.description && (
-                    <p className="text-slate-400 text-sm">{product.description}</p>
-                  )}
+                {/* Ligne principale */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex-1">
+                    <h3 className="text-white text-lg font-medium">{product.name}</h3>
+                    {product.description && (
+                      <p className="text-slate-400 text-sm">{product.description}</p>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <motion.div
+                      key={product.currentPrice}
+                      initial={{ scale: 1.2, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                      className={`text-2xl font-bold ${getPriceColor(product.trend)}`}
+                    >
+                      ${(product.currentPrice || 0).toFixed(2)}
+                    </motion.div>
+                    
+                    <motion.div
+                      key={`${product.id}-${product.trend}`}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                      className={getPriceColor(product.trend)}
+                    >
+                      {getTrendIcon(product.trend)}
+                    </motion.div>
+                  </div>
                 </div>
                 
-                <div className="flex items-center space-x-3">
-                  <motion.div
-                    key={product.currentPrice}
-                    initial={{ scale: 1.2, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    className={`text-2xl font-bold ${getPriceColor(product.trend)}`}
-                  >
-                    ${(product.currentPrice || 0).toFixed(2)}
-                  </motion.div>
+                {/* Historique des prix */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-slate-500 text-xs">24h:</span>
+                    <span className={`text-xs font-medium ${getPriceColor(product.trend)}`}>
+                      {product.trend === 'up' ? '+' : product.trend === 'down' ? '-' : ''}
+                      {Math.abs(product.priceChange || 0).toFixed(2)}€
+                    </span>
+                  </div>
                   
-                  <motion.div
-                    key={`${product.id}-${product.trend}`}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.2 }}
-                    className={getPriceColor(product.trend)}
-                  >
-                    {getTrendIcon(product.trend)}
-                  </motion.div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-slate-500 text-xs">Graph:</span>
+                    {createMiniChart(priceHistory[product.id], product.trend)}
+                  </div>
                 </div>
               </motion.div>
             ))}
