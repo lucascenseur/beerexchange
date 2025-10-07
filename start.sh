@@ -37,6 +37,14 @@ if [ ! -f "server/.env" ]; then
     echo "✅ Fichier .env créé. Vous pouvez le modifier si nécessaire."
 fi
 
+# Vérifier si le port 3000 est utilisé et le libérer si nécessaire
+if lsof -i :3000 >/dev/null 2>&1; then
+    echo "⚠️  Le port 3000 est déjà utilisé. Beer Exchange utilisera le port 3001."
+    echo "🔄 Arrêt des processus utilisant le port 3000..."
+    sudo pkill -f "react-scripts start" 2>/dev/null || true
+    sleep 2
+fi
+
 # Initialiser la base de données si nécessaire
 echo "🗄️  Initialisation de la base de données..."
 cd server
@@ -46,9 +54,9 @@ cd ..
 echo ""
 echo "🚀 Démarrage de l'application..."
 echo "================================"
-echo "Interface publique: http://localhost:3000"
-echo "Interface serveur:  http://localhost:3000/server/login"
-echo "Interface admin:    http://localhost:3000/admin/login"
+echo "Interface publique: http://localhost:3001"
+echo "Interface serveur:  http://localhost:3001/server/login"
+echo "Interface admin:    http://localhost:3001/admin/login"
 echo ""
 echo "Comptes de démonstration:"
 echo "  Admin:  admin / admin123"

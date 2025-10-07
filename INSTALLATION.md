@@ -160,7 +160,7 @@ npm run dev
 
 Cela va démarrer :
 - **Backend** sur http://localhost:5000
-- **Frontend** sur http://localhost:3000
+- **Frontend** sur http://localhost:3001
 
 ### Démarrage en mode production
 
@@ -177,18 +177,18 @@ npm start
 Une fois l'application démarrée, vous pouvez accéder à :
 
 ### Interface Publique
-- **URL** : http://localhost:3000
+- **URL** : http://localhost:3001
 - **Description** : Affichage des prix en temps réel (pour écran géant)
 - **Authentification** : Aucune
 
 ### Interface Serveur
-- **URL** : http://localhost:3000/server/login
+- **URL** : http://localhost:3001/server/login
 - **Utilisateur** : `server`
 - **Mot de passe** : `server123`
 - **Fonctionnalités** : Enregistrer les ventes (+1 vente)
 
 ### Interface Administrateur
-- **URL** : http://localhost:3000/admin/login
+- **URL** : http://localhost:3001/admin/login
 - **Utilisateur** : `admin`
 - **Mot de passe** : `admin123`
 - **Fonctionnalités** : Gestion complète des produits et statistiques
@@ -281,11 +281,11 @@ docker-compose exec server node scripts/initUsers.js all
 
 ### 1. Vérifier que l'application fonctionne
 
-1. Ouvrez http://localhost:3000
+1. Ouvrez http://localhost:3001
 2. Vous devriez voir l'interface publique avec les produits
-3. Connectez-vous en tant qu'admin : http://localhost:3000/admin/login
+3. Connectez-vous en tant qu'admin : http://localhost:3001/admin/login
 4. Ajoutez quelques produits
-5. Connectez-vous en tant que serveur : http://localhost:3000/server/login
+5. Connectez-vous en tant que serveur : http://localhost:3001/server/login
 6. Testez la fonction "+1 vente"
 
 ### 2. Test des fonctionnalités

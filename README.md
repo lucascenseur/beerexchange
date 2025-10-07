@@ -97,9 +97,9 @@ npm run dev
 
 ### 🌐 Accès aux interfaces
 
-- **Interface publique** : http://localhost:3000
-- **Interface serveur** : http://localhost:3000/server/login
-- **Interface admin** : http://localhost:3000/admin/login
+- **Interface publique** : http://localhost:3001
+- **Interface serveur** : http://localhost:3001/server/login
+- **Interface admin** : http://localhost:3001/admin/login
 - **API** : http://localhost:5000/api
 
 ### 📚 Guides détaillés

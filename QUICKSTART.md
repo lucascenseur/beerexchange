@@ -19,9 +19,9 @@ chmod +x start.sh
 ```
 
 ### 3. Accès
-- **Interface publique** : http://localhost:3000
-- **Admin** : http://localhost:3000/admin/login (admin/admin123)
-- **Serveur** : http://localhost:3000/server/login (server/server123)
+- **Interface publique** : http://localhost:3001
+- **Admin** : http://localhost:3001/admin/login (admin/admin123)
+- **Serveur** : http://localhost:3001/server/login (server/server123)
 
 ## 🎯 Test rapide
 
@@ -32,7 +32,7 @@ chmod +x start.sh
 ## ❓ Problème ?
 
 - **MongoDB ne démarre pas** ? Voir [INSTALLATION.md](INSTALLATION.md#dépannage)
-- **Port occupé** ? `lsof -i :3000` puis `kill -9 <PID>`
+- **Port occupé** ? `lsof -i :3001` puis `kill -9 <PID>`
 - **Dépendances** ? `npm run install-all`
 
 ---
