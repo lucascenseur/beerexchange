@@ -27,7 +27,7 @@ const BeerExchangeDisplay = () => {
     };
     
     setSalesLogs(prev => {
-      const newLogs = [log, ...prev].slice(0, 20); // Garder seulement les 20 derniers logs
+      const newLogs = [log, ...prev].slice(0, 10); // Garder seulement les 10 derniers logs
       return newLogs;
     });
   };
@@ -497,13 +497,13 @@ const BeerExchangeDisplay = () => {
 
       {/* Barre de logs des ventes */}
       <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-sm border-t border-slate-700 p-2 z-40">
-        <div className="flex items-center space-x-4 overflow-x-auto">
+        <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2 text-green-400 font-mono text-sm whitespace-nowrap">
             <Beer className="w-4 h-4" />
             <span>VENTES EN TEMPS RÉEL:</span>
           </div>
           
-          <div className="flex space-x-3 overflow-x-auto">
+          <div className="flex space-x-3">
             <AnimatePresence>
               {salesLogs.map((log) => (
                 <motion.div
@@ -525,12 +525,6 @@ const BeerExchangeDisplay = () => {
               ))}
             </AnimatePresence>
           </div>
-          
-          {salesLogs.length === 0 && (
-            <div className="text-slate-500 text-sm font-mono">
-              En attente des ventes...
-            </div>
-          )}
         </div>
       </div>
 
