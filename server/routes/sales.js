@@ -17,29 +17,29 @@ router.get('/', async (req, res) => {
       limit = 50 
     } = req.query;
     
-    const filter = {};
+    const whereClause = {};
     
     // Filtres de date
     if (startDate || endDate) {
-      filter.timestamp = {};
-      if (startDate) filter.timestamp.$gte = new Date(startDate);
-      if (endDate) filter.timestamp.$lte = new Date(endDate);
+      whereClause.createdAt = {};
+      if (startDate) whereClause.createdAt[require('sequelize').Op.gte] = new Date(startDate);
+      if (endDate) whereClause.createdAt[require('sequelize').Op.lte] = new Date(endDate);
     }
     
     // Filtres par produit et serveur
-    if (product) filter.product = product;
-    if (server) filter.server = server;
+    if (product) whereClause.productId = product;
+    if (server) whereClause.serverId = server;
     
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const offset = (parseInt(page) - 1) * parseInt(limit);
     
-    const sales = await Sale.find(filter)
-      .populate('product', 'name category')
-      .populate('server', 'username')
-      .sort({ timestamp: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
+    const sales = await Sale.findAll({
+      where: whereClause,
+      order: [['createdAt', 'DESC']],
+      offset: offset,
+      limit: parseInt(limit)
+    });
     
-    const total = await Sale.countDocuments(filter);
+    const total = await Sale.count({ where: whereClause });
     
     res.json({
       sales,
@@ -83,15 +83,15 @@ router.get('/today', async (req, res) => {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
-    const sales = await Sale.find({
-      timestamp: {
-        $gte: today,
-        $lt: tomorrow
-      }
-    })
-    .populate('product', 'name category')
-    .populate('server', 'username')
-    .sort({ timestamp: -1 });
+    const sales = await Sale.findAll({
+      where: {
+        createdAt: {
+          [require('sequelize').Op.gte]: today,
+          [require('sequelize').Op.lt]: tomorrow
+        }
+      },
+      order: [['createdAt', 'DESC']]
+    });
     
     const stats = await Sale.getStats(today, tomorrow);
     
@@ -110,35 +110,26 @@ router.get('/by-server', async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     
-    const matchStage = {};
+    const whereClause = {};
     if (startDate || endDate) {
-      matchStage.timestamp = {};
-      if (startDate) matchStage.timestamp.$gte = new Date(startDate);
-      if (endDate) matchStage.timestamp.$lte = new Date(endDate);
+      whereClause.createdAt = {};
+      if (startDate) whereClause.createdAt[require('sequelize').Op.gte] = new Date(startDate);
+      if (endDate) whereClause.createdAt[require('sequelize').Op.lte] = new Date(endDate);
     }
     
-    const salesByServer = await Sale.aggregate([
-      { $match: matchStage },
-      {
-        $group: {
-          _id: '$server',
-          serverName: { $first: '$serverName' },
-          totalSales: { $sum: '$quantity' },
-          totalRevenue: { $sum: '$totalAmount' },
-          averagePrice: { $avg: '$price' }
-        }
-      },
-      {
-        $project: {
-          _id: 1,
-          serverName: 1,
-          totalSales: 1,
-          totalRevenue: { $round: ['$totalRevenue', 2] },
-          averagePrice: { $round: ['$averagePrice', 2] }
-        }
-      },
-      { $sort: { totalSales: -1 } }
-    ]);
+    const salesByServer = await Sale.findAll({
+      where: whereClause,
+      attributes: [
+        'serverId',
+        'serverName',
+        [require('sequelize').fn('SUM', require('sequelize').col('quantity')), 'totalSales'],
+        [require('sequelize').fn('SUM', require('sequelize').col('total_amount')), 'totalRevenue'],
+        [require('sequelize').fn('AVG', require('sequelize').col('price')), 'averagePrice']
+      ],
+      group: ['serverId', 'serverName'],
+      order: [[require('sequelize').literal('totalSales'), 'DESC']],
+      raw: true
+    });
     
     res.json({ salesByServer });
   } catch (error) {
@@ -149,7 +140,7 @@ router.get('/by-server', async (req, res) => {
 
 // Route pour créer une vente manuelle (admin seulement)
 router.post('/', [
-  body('productId').isMongoId().withMessage('ID produit invalide'),
+  body('productId').isInt().withMessage('ID produit invalide'),
   body('quantity').isInt({ min: 1 }).withMessage('Quantité doit être un entier positif'),
   body('price').isFloat({ min: 0 }).withMessage('Prix doit être positif'),
   body('notes').optional().isString().isLength({ max: 200 }).withMessage('Notes trop longues')
@@ -165,7 +156,7 @@ router.post('/', [
 
     const { productId, quantity, price, notes } = req.body;
     
-    const product = await Product.findById(productId);
+    const product = await Product.findByPk(productId);
     if (!product) {
       return res.status(404).json({ message: 'Produit non trouvé' });
     }
@@ -175,48 +166,26 @@ router.post('/', [
     }
     
     // Créer la vente
-    const sale = new Sale({
-      product: productId,
+    const sale = await Sale.create({
+      productId: productId,
       productName: product.name,
       price: price,
       quantity: quantity,
       totalAmount: price * quantity,
-      server: req.user._id,
-      serverName: req.user.username,
+      serverId: req.user?.id || 1,
+      serverName: req.user?.username || 'Admin',
       notes: notes
     });
     
-    await sale.save();
-    
     // Mettre à jour le stock du produit
-    product.stock -= quantity;
-    product.salesCount += quantity;
-    
-    // Recalculer le prix si nécessaire
-    const newPrice = product.calculateNewPrice();
-    product.currentPrice = newPrice;
-    
-    // Ajouter à l'historique des prix
-    product.priceHistory.push({
-      price: newPrice,
-      timestamp: new Date(),
-      salesCount: product.salesCount
+    await product.update({
+      stock: product.stock - quantity,
+      salesCount: (product.salesCount || 0) + quantity
     });
-    
-    await product.save();
-    
-    // Émettre l'événement Socket.io
-    const io = req.app.get('io');
-    if (io) {
-      io.to('public').emit('product-updated', product.toPublicJSON());
-      io.to('servers').emit('product-updated', product);
-    }
     
     res.status(201).json({
       message: 'Vente créée avec succès',
-      sale: await Sale.findById(sale._id)
-        .populate('product', 'name category')
-        .populate('server', 'username')
+      sale: sale
     });
     
   } catch (error) {

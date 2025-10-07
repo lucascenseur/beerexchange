@@ -123,6 +123,15 @@ const EnhancedAdminDashboard = () => {
       setDetailedStats(response.data.salesByProduct || []);
     } catch (error) {
       console.error('Erreur récupération statistiques détaillées:', error);
+      // Fallback sur les données des produits
+      const productStats = products.map(product => ({
+        productId: product.id,
+        productName: product.name,
+        totalSales: product.salesCount || 0,
+        totalRevenue: (product.salesCount || 0) * (product.currentPrice || 0),
+        averagePrice: product.currentPrice || 0
+      }));
+      setDetailedStats(productStats);
     }
   };
 
@@ -139,6 +148,8 @@ const EnhancedAdminDashboard = () => {
       setSalesData(response.data.sales || []);
     } catch (error) {
       console.error('Erreur récupération données ventes:', error);
+      // Fallback sur des données simulées
+      setSalesData([]);
     }
   };
 
@@ -189,6 +200,14 @@ const EnhancedAdminDashboard = () => {
     fetchDetailedStats();
     fetchSalesData();
   }, [dateRange]);
+
+  // Charger les données détaillées quand les produits sont chargés
+  useEffect(() => {
+    if (products.length > 0) {
+      fetchDetailedStats();
+      fetchSalesData();
+    }
+  }, [products, dateRange]);
 
   // Fonction d'export PDF
   const exportToPDF = () => {
@@ -519,32 +538,40 @@ const EnhancedAdminDashboard = () => {
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-white">Détail des ventes</h3>
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-white">
-                    <thead>
-                      <tr className="border-b border-white/20">
-                        <th className="text-left py-2">Produit</th>
-                        <th className="text-left py-2">Quantité</th>
-                        <th className="text-left py-2">Prix</th>
-                        <th className="text-left py-2">Total</th>
-                        <th className="text-left py-2">Serveur</th>
-                        <th className="text-left py-2">Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {salesData.slice(0, 20).map((sale, index) => (
-                        <tr key={index} className="border-b border-white/10">
-                          <td className="py-2">{sale.productName}</td>
-                          <td className="py-2">{sale.quantity}</td>
-                          <td className="py-2">{parseFloat(sale.price).toFixed(2)}€</td>
-                          <td className="py-2">{parseFloat(sale.totalAmount).toFixed(2)}€</td>
-                          <td className="py-2">{sale.serverName}</td>
-                          <td className="py-2">{new Date(sale.createdAt).toLocaleString('fr-FR')}</td>
+                {salesData.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-white">
+                      <thead>
+                        <tr className="border-b border-white/20">
+                          <th className="text-left py-2">Produit</th>
+                          <th className="text-left py-2">Quantité</th>
+                          <th className="text-left py-2">Prix</th>
+                          <th className="text-left py-2">Total</th>
+                          <th className="text-left py-2">Serveur</th>
+                          <th className="text-left py-2">Date</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {salesData.slice(0, 20).map((sale, index) => (
+                          <tr key={index} className="border-b border-white/10">
+                            <td className="py-2">{sale.productName}</td>
+                            <td className="py-2">{sale.quantity}</td>
+                            <td className="py-2">{parseFloat(sale.price).toFixed(2)}€</td>
+                            <td className="py-2">{parseFloat(sale.totalAmount).toFixed(2)}€</td>
+                            <td className="py-2">{sale.serverName}</td>
+                            <td className="py-2">{new Date(sale.createdAt).toLocaleString('fr-FR')}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-white/70">
+                    <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Aucune vente trouvée pour cette période</p>
+                    <p className="text-sm">Les ventes apparaîtront ici une fois enregistrées</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
