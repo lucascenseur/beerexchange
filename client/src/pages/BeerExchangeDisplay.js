@@ -13,6 +13,7 @@ const BeerExchangeDisplay = () => {
   const [priceHistory, setPriceHistory] = useState({});
   const [salesLogs, setSalesLogs] = useState([]);
   const [processedSales, setProcessedSales] = useState(new Set());
+  const [productSaleAnimations, setProductSaleAnimations] = useState({});
 
   const { onProductUpdate, onProductCreated, onProductDeleted } = useSocket();
 
@@ -45,6 +46,34 @@ const BeerExchangeDisplay = () => {
       
       return prev; // Ne pas ajouter de doublon
     });
+  };
+
+  // Ajouter une animation de vente sur un produit spécifique
+  const addProductSaleAnimation = (productId, productName, quantity, price) => {
+    const animationId = `${productId}-${Date.now()}`;
+    
+    setProductSaleAnimations(prev => ({
+      ...prev,
+      [productId]: {
+        id: animationId,
+        productName,
+        quantity,
+        price: parseFloat(price || 0),
+        timestamp: Date.now(),
+        visible: true
+      }
+    }));
+
+    // Supprimer l'animation après 3 secondes
+    setTimeout(() => {
+      setProductSaleAnimations(prev => {
+        const newAnimations = { ...prev };
+        if (newAnimations[productId]?.id === animationId) {
+          delete newAnimations[productId];
+        }
+        return newAnimations;
+      });
+    }, 3000);
   };
 
   // Récupérer l'historique réel des prix depuis l'API
@@ -243,6 +272,8 @@ const BeerExchangeDisplay = () => {
             if (recentSales.length === 0) {
               // Ajouter un log de vente
               addSalesLog(product.name, salesIncrease, newPrice);
+              // Ajouter une animation sur le produit
+              addProductSaleAnimation(product.id, product.name, salesIncrease, newPrice);
               console.log(`🛒 Vente détectée: ${salesIncrease}x ${product.name} à ${newPrice}€`);
               
               // Marquer cette vente comme traitée
@@ -395,6 +426,27 @@ const BeerExchangeDisplay = () => {
                     )}
                   </div>
                   
+                  {/* Animation de vente */}
+                  {productSaleAnimations[product.id] && (
+                    <motion.div
+                      key={productSaleAnimations[product.id].id}
+                      initial={{ scale: 0.8, opacity: 0, x: -20 }}
+                      animate={{ scale: 1, opacity: 1, x: 0 }}
+                      exit={{ scale: 0.8, opacity: 0, x: 20 }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                      className="bg-green-500/20 border border-green-500/40 rounded-lg px-3 py-2 mr-3"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="text-green-400 text-sm font-bold">
+                          +{productSaleAnimations[product.id].quantity}
+                        </span>
+                        <span className="text-green-300 text-xs">
+                          {productSaleAnimations[product.id].price.toFixed(2)}€
+                        </span>
+                      </div>
+                    </motion.div>
+                  )}
+                  
                   <div className="flex items-center space-x-3">
                     <motion.div
                       key={product.currentPrice}
@@ -462,6 +514,27 @@ const BeerExchangeDisplay = () => {
                       <p className="text-slate-400 text-sm">{product.description}</p>
                     )}
                   </div>
+                  
+                  {/* Animation de vente */}
+                  {productSaleAnimations[product.id] && (
+                    <motion.div
+                      key={productSaleAnimations[product.id].id}
+                      initial={{ scale: 0.8, opacity: 0, x: -20 }}
+                      animate={{ scale: 1, opacity: 1, x: 0 }}
+                      exit={{ scale: 0.8, opacity: 0, x: 20 }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                      className="bg-green-500/20 border border-green-500/40 rounded-lg px-3 py-2 mr-3"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="text-green-400 text-sm font-bold">
+                          +{productSaleAnimations[product.id].quantity}
+                        </span>
+                        <span className="text-green-300 text-xs">
+                          {productSaleAnimations[product.id].price.toFixed(2)}€
+                        </span>
+                      </div>
+                    </motion.div>
+                  )}
                   
                   <div className="flex items-center space-x-3">
                     <motion.div
@@ -546,28 +619,6 @@ const BeerExchangeDisplay = () => {
         </div>
       </div>
 
-      {/* Price Change Animations */}
-      <AnimatePresence>
-        {Object.entries(priceChanges).map(([productId, change]) => (
-          <motion.div
-            key={`${productId}-${change.timestamp}`}
-            initial={{ opacity: 1, y: 0, scale: 1 }}
-            animate={{ opacity: 0, y: -50, scale: 1.2 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 2 }}
-            className="fixed pointer-events-none z-50"
-            style={{
-              left: '50%',
-              top: '50%',
-              transform: 'translate(-50%, -50%)'
-            }}
-          >
-            <div className={`text-3xl font-bold ${change.change > 0 ? 'text-green-400' : 'text-red-400'}`}>
-              {change.change > 0 ? '+' : ''}{change.change.toFixed(2)}
-            </div>
-          </motion.div>
-        ))}
-      </AnimatePresence>
     </div>
   );
 };
