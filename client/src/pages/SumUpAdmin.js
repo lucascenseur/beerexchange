@@ -31,7 +31,14 @@ const SumUpAdmin = () => {
       setAuthStatus(response.data);
     } catch (error) {
       console.error('Erreur vérification statut SumUp:', error);
-      setAuthStatus({ authenticated: false });
+      setAuthStatus({ 
+        authenticated: false, 
+        demo_mode: true,
+        demo_status: {
+          demo_mode: true,
+          message: 'Beer Exchange fonctionne en mode démo SumUp'
+        }
+      });
     }
   };
 
@@ -136,13 +143,30 @@ const SumUpAdmin = () => {
           Statut d'Authentification SumUp
         </h3>
         
+        {/* Mode démo */}
+        {authStatus?.demo_mode && (
+          <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>
+              <div>
+                <p className="text-blue-300 font-semibold">Mode Démo SumUp Activé</p>
+                <p className="text-blue-200/80 text-sm">
+                  {authStatus.demo_status?.message || 'Beer Exchange fonctionne en mode démo SumUp'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {authStatus ? (
           <div className="flex items-center gap-4">
             {authStatus.authenticated ? (
               <>
                 <CheckCircle className="w-8 h-8 text-green-400" />
                 <div>
-                  <p className="text-green-400 font-semibold">Authentifié avec SumUp</p>
+                  <p className="text-green-400 font-semibold">
+                    {authStatus.demo_mode ? 'Authentifié (Mode Démo)' : 'Authentifié avec SumUp'}
+                  </p>
                   {authStatus.merchant && (
                     <p className="text-white/70 text-sm">
                       Marchand: {authStatus.merchant.email} (ID: {authStatus.merchant.id})
@@ -159,7 +183,9 @@ const SumUpAdmin = () => {
               <>
                 <XCircle className="w-8 h-8 text-red-400" />
                 <div>
-                  <p className="text-red-400 font-semibold">Non authentifié avec SumUp</p>
+                  <p className="text-red-400 font-semibold">
+                    {authStatus.demo_mode ? 'Mode Démo - Non authentifié' : 'Non authentifié avec SumUp'}
+                  </p>
                   <p className="text-white/70 text-sm">
                     {authStatus.isExpired ? 'Token expiré' : 'Aucune authentification active'}
                   </p>
@@ -169,7 +195,7 @@ const SumUpAdmin = () => {
                   className="px-4 py-2 bg-beer-gold text-purple-900 rounded-lg hover:bg-yellow-400 transition-colors duration-200 flex items-center gap-2"
                 >
                   <ExternalLink className="w-4 h-4" />
-                  S'authentifier avec SumUp
+                  {authStatus.demo_mode ? 'Démo SumUp' : 'S\'authentifier avec SumUp'}
                 </button>
               </>
             )}

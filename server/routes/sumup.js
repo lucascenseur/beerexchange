@@ -1,5 +1,5 @@
 const express = require('express');
-const sumupService = require('../services/sumupServiceSimple');
+const sumupService = require('../services/sumupServiceDemo');
 const SumUpToken = require('../models/SumUpToken');
 const syncService = require('../services/syncService');
 const router = express.Router();
@@ -87,7 +87,9 @@ router.get('/status', async (req, res) => {
     if (!activeToken) {
       return res.json({
         authenticated: false,
-        message: 'Aucune authentification SumUp active'
+        message: 'Aucune authentification SumUp active',
+        demo_mode: true,
+        demo_status: sumupService.getDemoStatus()
       });
     }
 
@@ -101,14 +103,18 @@ router.get('/status', async (req, res) => {
         email: activeToken.merchantEmail
       },
       expiresAt: new Date(activeToken.created_at.getTime() + (activeToken.expiresIn * 1000)),
-      isExpired: isExpired
+      isExpired: isExpired,
+      demo_mode: true,
+      demo_status: sumupService.getDemoStatus()
     });
 
   } catch (error) {
     console.error('❌ Erreur vérification statut SumUp:', error);
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de la vérification du statut'
+      message: 'Erreur lors de la vérification du statut',
+      demo_mode: true,
+      demo_status: sumupService.getDemoStatus()
     });
   }
 });

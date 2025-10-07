@@ -192,11 +192,13 @@ class SumUpServiceSimple {
       return response;
     } catch (error) {
       console.error('❌ Erreur lors de la récupération des infos marchand:', error.message);
+      console.log('🔄 Mode démo activé - Informations marchand simulées');
       // En cas d'erreur, retourner des infos simulées
       return {
-        id: 'demo-merchant',
+        id: 'demo-merchant-' + Date.now(),
         email: 'demo@beerexchange.com',
-        name: 'Beer Exchange Demo'
+        name: 'Beer Exchange Demo',
+        status: 'demo_mode'
       };
     }
   }
