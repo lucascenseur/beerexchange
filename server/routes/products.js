@@ -3,6 +3,14 @@ const { body, validationResult } = require('express-validator');
 const Product = require('../models/Product');
 const Sale = require('../models/Sale');
 
+// Variable globale pour l'instance Socket.io
+let ioInstance = null;
+
+// Fonction pour définir l'instance Socket.io
+const setSocketIO = (io) => {
+  ioInstance = io;
+};
+
 const router = express.Router();
 
 // Route publique pour obtenir tous les produits actifs (interface publique)
@@ -282,8 +290,9 @@ router.post('/sales', async (req, res) => {
       
       // Déclencher le système de bourse pour mettre à jour les prix
       try {
-        const priceEngine = require('../services/priceEngine');
-        await priceEngine.processSale(product_id, parseInt(quantity));
+        const priceEngine = require('../utils/priceEngine');
+        // Passer l'instance Socket.io au moteur de prix
+        await priceEngine.updatePricesAfterSale(ioInstance, product_id, parseInt(quantity));
         console.log(`📈 Système de bourse déclenché pour ${product_name}`);
       } catch (priceError) {
         console.error('❌ Erreur système de bourse:', priceError);
@@ -320,4 +329,4 @@ router.post('/sales', async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = { router, setSocketIO };

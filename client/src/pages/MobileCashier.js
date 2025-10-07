@@ -26,6 +26,24 @@ const MobileCashier = () => {
 
   const { onProductUpdate } = useSocket();
 
+  // Écouter les mises à jour de produits en temps réel
+  useEffect(() => {
+    const unsubscribe = onProductUpdate((updatedProduct) => {
+      console.log('🔄 Interface mobile: Produit mis à jour', updatedProduct);
+      if (!updatedProduct || !updatedProduct.id) {
+        return;
+      }
+      
+      setProducts(prev => prev.map(product => 
+        product.id === updatedProduct.id 
+          ? { ...product, ...updatedProduct }
+          : product
+      ));
+    });
+
+    return unsubscribe;
+  }, [onProductUpdate]);
+
   // Charger les produits
   useEffect(() => {
     fetchProducts();
@@ -276,7 +294,13 @@ const MobileCashier = () => {
       {/* Panier flottant en bas */}
       <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-sm border-t border-slate-700 p-3 z-40">
         <button
-          onClick={() => setShowCart(!showCart)}
+          onClick={() => {
+            setShowCart(!showCart);
+            // Recharger les produits pour avoir les prix à jour
+            if (!showCart) {
+              fetchProducts();
+            }
+          }}
           className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors duration-200 text-sm"
         >
           <ShoppingCart className="w-5 h-5" />

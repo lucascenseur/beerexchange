@@ -9,7 +9,7 @@ const { sequelize, testConnection } = require('./config/database');
 const priceEngine = require('./utils/priceEngine');
 require('dotenv').config();
 
-const productRoutes = require('./routes/products');
+const { router: productRoutes, setSocketIO } = require('./routes/products');
 const saleRoutes = require('./routes/sales');
 const adminRoutes = require('./routes/admin');
 const sumupRoutes = require('./routes/sumup');
@@ -114,6 +114,7 @@ server.listen(PORT, () => {
   
   // Démarrer le moteur de prix
   priceEngine.start(io);
+  setSocketIO(io);
 });
 
 // Arrêter le moteur de prix à l'arrêt du serveur
