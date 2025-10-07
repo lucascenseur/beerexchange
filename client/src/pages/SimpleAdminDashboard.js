@@ -12,7 +12,8 @@ import {
   ArrowLeft,
   Plus,
   Edit,
-  Trash2
+  Trash2,
+  CreditCard
 } from 'lucide-react';
 import { useSocket } from '../contexts/SocketContext';
 import axios from 'axios';
@@ -178,12 +179,21 @@ const SimpleAdminDashboard = () => {
           </div>
         </div>
         
-        <button
-          onClick={fetchProducts}
-          className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
-        >
-          <RefreshCw className="w-5 h-5 text-white" />
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => navigate('/admin/sumup')}
+            className="p-2 bg-beer-gold/20 rounded-lg hover:bg-beer-gold/30 transition-colors"
+            title="Gestion SumUp"
+          >
+            <CreditCard className="w-5 h-5 text-beer-gold" />
+          </button>
+          <button
+            onClick={fetchProducts}
+            className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+          >
+            <RefreshCw className="w-5 h-5 text-white" />
+          </button>
+        </div>
       </div>
 
       {/* Statistiques */}

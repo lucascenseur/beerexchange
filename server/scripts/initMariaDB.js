@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Product = require('../models/Product');
 const PriceHistory = require('../models/PriceHistory');
 const Sale = require('../models/Sale');
+const SumUpToken = require('../models/SumUpToken');
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
 

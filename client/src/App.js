@@ -8,6 +8,7 @@ import BeerExchangeDisplay from './pages/BeerExchangeDisplay';
 import SimpleLogin from './pages/SimpleLogin';
 import SimpleServerDashboard from './pages/SimpleServerDashboard';
 import SimpleAdminDashboard from './pages/SimpleAdminDashboard';
+import SumUpAdmin from './pages/SumUpAdmin';
 
 function App() {
   return (
@@ -30,11 +31,17 @@ function App() {
                 element={<SimpleServerDashboard />}
               />
               
-              {/* Interface administrateur */}
-              <Route 
-                path="/admin/dashboard" 
-                element={<SimpleAdminDashboard />}
-              />
+                  {/* Interface administrateur */}
+                  <Route
+                    path="/admin/dashboard"
+                    element={<SimpleAdminDashboard />}
+                  />
+
+                  {/* Interface SumUp */}
+                  <Route
+                    path="/admin/sumup"
+                    element={<SumUpAdmin />}
+                  />
               
               {/* Redirection par défaut */}
               <Route path="*" element={<Navigate to="/" replace />} />

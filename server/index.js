@@ -12,6 +12,7 @@ require('dotenv').config();
 const productRoutes = require('./routes/products');
 const saleRoutes = require('./routes/sales');
 const adminRoutes = require('./routes/admin');
+const sumupRoutes = require('./routes/sumup');
 
 const app = express();
 const server = createServer(app);
@@ -61,6 +62,7 @@ initializeDatabase();
 app.use('/api/products', productRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/sumup', sumupRoutes);
 
 // Route de test
 app.get('/api/health', (req, res) => {

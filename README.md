@@ -24,16 +24,19 @@ Un site web complet et dynamique pour la gestion des boissons lors de soirées �
 - 📊 Statistiques globales et visualisation des ventes
 - ⚙️ Paramètres globaux (coefficient de variation des prix)
 - 🔄 Options de réinitialisation (prix, stocks, ventes)
+- 💳 **Intégration SumUp** : Synchronisation des produits et paiements
 
 ## 🛠️ Technologies Utilisées
 
 ### Backend
 - **Node.js** + **Express** - Serveur web
-- **MongoDB** + **Mongoose** - Base de données
+- **MariaDB** + **Sequelize** - Base de données et ORM
 - **JWT** - Authentification sécurisée
 - **Socket.io** - Communication temps réel
 - **bcryptjs** - Chiffrement des mots de passe
 - **express-validator** - Validation des données
+- **SumUp API** - Intégration paiements professionnels
+- **OAuth 2.0** - Authentification SumUp sécurisée
 
 ### Frontend
 - **React** - Interface utilisateur
@@ -83,14 +86,21 @@ cp server/env.example server/.env
 # Éditer le fichier .env avec vos paramètres
 ```
 
-4. **Initialiser la base de données**
+4. **Configuration SumUp (Optionnel)**
+```bash
+# Ajouter vos clés SumUp dans server/.env
+SUMUP_CLIENT_ID=your-sumup-client-id
+SUMUP_CLIENT_SECRET=your-sumup-client-secret
+```
+
+5. **Initialiser la base de données**
 ```bash
 cd server
 node scripts/initUsers.js all
 cd ..
 ```
 
-5. **Démarrer l'application**
+6. **Démarrer l'application**
 ```bash
 npm run dev
 ```
@@ -100,12 +110,14 @@ npm run dev
 - **Interface publique** : http://localhost:3001
 - **Interface serveur** : http://localhost:3001/server/login
 - **Interface admin** : http://localhost:3001/admin/login
+- **Interface SumUp** : http://localhost:3001/admin/sumup
 - **API** : http://localhost:5000/api
 
 ### 📚 Guides détaillés
 
 - **[QUICKSTART.md](QUICKSTART.md)** - Installation en 3 étapes
 - **[INSTALLATION.md](INSTALLATION.md)** - Guide complet avec dépannage
+- **[SUMUP_INTEGRATION.md](SUMUP_INTEGRATION.md)** - Intégration SumUp complète
 - **[DEMO.md](DEMO.md)** - Guide de démonstration
 
 ## 🔑 Comptes de Démonstration
