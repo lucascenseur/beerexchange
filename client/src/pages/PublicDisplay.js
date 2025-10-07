@@ -112,33 +112,33 @@ const PublicDisplay = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-6">
-      {/* Header */}
+    <div className="h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4 overflow-hidden">
+      {/* Header compact */}
       <motion.div 
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-12"
+        className="text-center mb-4"
       >
-        <h1 className="text-6xl font-black text-beer-gold mb-4 animate-pulse-glow">
+        <h1 className="text-3xl font-black text-beer-gold mb-2 animate-pulse-glow">
           🍺 BEER EXCHANGE 🍺
         </h1>
-        <p className="text-2xl text-white/90 font-semibold">
+        <p className="text-lg text-white/90 font-semibold">
           Marché en temps réel des boissons
         </p>
         
-        {/* Statistiques */}
-        <div className="flex justify-center gap-8 mt-8">
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
-            <p className="text-3xl font-bold text-beer-gold">{stats.totalProducts}</p>
-            <p className="text-white/80">Produits</p>
+        {/* Statistiques compactes */}
+        <div className="flex justify-center gap-4 mt-3">
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 text-center">
+            <p className="text-xl font-bold text-beer-gold">{stats.totalProducts}</p>
+            <p className="text-white/80 text-sm">Produits</p>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
-            <p className="text-3xl font-bold text-green-400">{stats.totalSales}</p>
-            <p className="text-white/80">Ventes</p>
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 text-center">
+            <p className="text-xl font-bold text-green-400">{stats.totalSales}</p>
+            <p className="text-white/80 text-sm">Ventes</p>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
-            <p className="text-3xl font-bold text-blue-400">{stats.averagePrice}€</p>
-            <p className="text-white/80">Prix moyen</p>
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 text-center">
+            <p className="text-xl font-bold text-blue-400">{stats.averagePrice}€</p>
+            <p className="text-white/80 text-sm">Prix moyen</p>
           </div>
         </div>
       </motion.div>

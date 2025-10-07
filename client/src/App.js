@@ -6,6 +6,7 @@ import { SocketProvider } from './contexts/SocketContext';
 
 // Pages
 import PublicDisplay from './pages/PublicDisplay';
+import PublicDisplayCompact from './pages/PublicDisplayCompact';
 import ServerLogin from './pages/ServerLogin';
 import ServerDashboard from './pages/ServerDashboard';
 import AdminLogin from './pages/AdminLogin';
@@ -22,8 +23,9 @@ function App() {
           <div className="App min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
             <Routes>
               {/* Interface publique - accessible sans authentification */}
-              <Route path="/" element={<PublicDisplay />} />
-              <Route path="/public" element={<PublicDisplay />} />
+              <Route path="/" element={<PublicDisplayCompact />} />
+              <Route path="/public" element={<PublicDisplayCompact />} />
+              <Route path="/public/full" element={<PublicDisplay />} />
               
               {/* Interface serveur */}
               <Route path="/server/login" element={<ServerLogin />} />
