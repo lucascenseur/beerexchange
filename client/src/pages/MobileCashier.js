@@ -81,10 +81,10 @@ const MobileCashier = () => {
       }
       
       const activeProducts = productsData.filter(product => 
-        product && product.isActive && (product.currentPrice || 0) > 0
+        product && product.isActive
       ).map(product => ({
         ...product,
-        currentPrice: parseFloat(product.currentPrice || 0),
+        currentPrice: parseFloat(product.currentPrice || product.basePrice || 0),
         basePrice: parseFloat(product.basePrice || product.currentPrice || 0)
       }));
       
