@@ -12,7 +12,7 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     // Se connecter au socket seulement si l'utilisateur est authentifié
     if (isAuthenticated && user) {
-      const newSocket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000', {
+      const newSocket = io(process.env.REACT_APP_SOCKET_URL || '', {
         auth: {
           token: localStorage.getItem('token')
         }
@@ -48,7 +48,7 @@ export const SocketProvider = ({ children }) => {
       };
     } else {
       // Pour l'interface publique, se connecter sans authentification
-      const publicSocket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000');
+      const publicSocket = io(process.env.REACT_APP_SOCKET_URL || '');
       
       publicSocket.on('connect', () => {
         console.log('🔌 Connecté au serveur Socket.io (public)');
