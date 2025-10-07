@@ -1,9 +1,25 @@
 const express = require('express');
+const multer = require('multer');
 const sumupService = require('../services/sumupServiceReal');
 const SumUpToken = require('../models/SumUpToken');
 const syncService = require('../services/syncService');
 const sumupSyncService = require('../services/sumupSyncService');
 const router = express.Router();
+
+// Configuration multer pour l'upload de fichiers
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB max
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Seuls les fichiers CSV sont autorisés'), false);
+    }
+  }
+});
 
 // Route pour vérifier la configuration SumUp
 router.get('/config', async (req, res) => {
@@ -616,6 +632,131 @@ router.get('/transactions', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erreur lors de la récupération des transactions'
+    });
+  }
+});
+
+// Route pour importer les produits depuis un CSV SumUp
+router.post('/import-csv', upload.single('csvFile'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Aucun fichier CSV fourni'
+      });
+    }
+
+    const csvFile = req.file;
+    const csvContent = csvFile.buffer.toString('utf8');
+    
+    // Parser le CSV
+    const lines = csvContent.split('\n').filter(line => line.trim());
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    
+    console.log('📁 Headers CSV détectés:', headers);
+    
+    const Product = require('../models/Product');
+    let importedCount = 0;
+    let currentProduct = null;
+    
+    // Traiter chaque ligne (en ignorant l'en-tête)
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line.trim()) continue;
+      
+      const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+      const row = {};
+      headers.forEach((header, index) => {
+        row[header] = values[index] || '';
+      });
+      
+      console.log('📦 Traitement ligne:', row);
+      
+      // Si c'est un nouveau produit (Item name non vide)
+      if (row['Item name'] && row['Item name'].trim()) {
+        currentProduct = {
+          name: row['Item name'].trim(),
+          price: parseFloat(row['Price']) || 0,
+          description: row['Description (Online Store and Invoices only)'] || '',
+          category: row['Category'] || 'beer',
+          isVisible: row['Is variation visible? (Yes/No)'] === 'Yes'
+        };
+        
+        // Créer le produit principal
+        if (currentProduct.isVisible && currentProduct.price > 0) {
+          try {
+            const existingProduct = await Product.findOne({
+              where: { name: currentProduct.name }
+            });
+            
+            if (!existingProduct) {
+              await Product.create({
+                name: currentProduct.name,
+                description: currentProduct.description,
+                category: currentProduct.category,
+                base_price: currentProduct.price,
+                current_price: currentProduct.price,
+                stock: 999,
+                initial_stock: 999,
+                is_active: true
+              });
+              console.log(`✅ Produit créé: ${currentProduct.name} - ${currentProduct.price}€`);
+              importedCount++;
+            } else {
+              console.log(`⚠️ Produit existant: ${currentProduct.name}`);
+            }
+          } catch (error) {
+            console.error(`❌ Erreur création produit ${currentProduct.name}:`, error);
+          }
+        }
+      }
+      // Si c'est une variation (Option 1 non vide)
+      else if (row['Option 1'] && row['Option 1'].trim() && currentProduct) {
+        const variationName = `${currentProduct.name} ${row['Option 1'].trim()}`;
+        const variationPrice = parseFloat(row['Price']) || 0;
+        
+        if (variationPrice > 0) {
+          try {
+            const existingVariation = await Product.findOne({
+              where: { name: variationName }
+            });
+            
+            if (!existingVariation) {
+              await Product.create({
+                name: variationName,
+                description: currentProduct.description,
+                category: currentProduct.category,
+                base_price: variationPrice,
+                current_price: variationPrice,
+                stock: 999,
+                initial_stock: 999,
+                is_active: true
+              });
+              console.log(`✅ Variation créée: ${variationName} - ${variationPrice}€`);
+              importedCount++;
+            } else {
+              console.log(`⚠️ Variation existante: ${variationName}`);
+            }
+          } catch (error) {
+            console.error(`❌ Erreur création variation ${variationName}:`, error);
+          }
+        }
+      }
+    }
+    
+    console.log(`🎉 Import CSV terminé: ${importedCount} produits importés`);
+    
+    res.json({
+      success: true,
+      message: `Import réussi: ${importedCount} produits importés`,
+      imported: importedCount
+    });
+    
+  } catch (error) {
+    console.error('❌ Erreur import CSV:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de l\'import du fichier CSV'
     });
   }
 });

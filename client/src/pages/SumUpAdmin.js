@@ -31,6 +31,8 @@ const SumUpAdmin = () => {
   const [syncLoading, setSyncLoading] = useState(false);
   const [transactions, setTransactions] = useState([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const [csvFile, setCsvFile] = useState(null);
+  const [csvImporting, setCsvImporting] = useState(false);
   const navigate = useNavigate();
 
   // Vérifier la configuration SumUp
@@ -192,6 +194,49 @@ const SumUpAdmin = () => {
       toast.error('Erreur lors de la récupération des transactions');
     } finally {
       setTransactionsLoading(false);
+    }
+  };
+
+  // Gérer l'upload du fichier CSV
+  const handleCsvFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file && file.type === 'text/csv') {
+      setCsvFile(file);
+    } else {
+      toast.error('Veuillez sélectionner un fichier CSV valide');
+    }
+  };
+
+  // Importer les produits depuis le CSV SumUp
+  const importCsvProducts = async () => {
+    if (!csvFile) {
+      toast.error('Veuillez sélectionner un fichier CSV');
+      return;
+    }
+
+    setCsvImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append('csvFile', csvFile);
+
+      const response = await axios.post('/api/sumup/import-csv', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      toast.success(`Import réussi: ${response.data.imported} produits importés`);
+      setCsvFile(null);
+      
+      // Réinitialiser l'input file
+      const fileInput = document.getElementById('csvFileInput');
+      if (fileInput) fileInput.value = '';
+      
+    } catch (error) {
+      console.error('Erreur import CSV:', error);
+      toast.error('Erreur lors de l\'import du fichier CSV');
+    } finally {
+      setCsvImporting(false);
     }
   };
 
@@ -471,6 +516,69 @@ const SumUpAdmin = () => {
             <p className="text-green-300 text-sm">
               <strong>🛒 Transactions en temps réel :</strong> Les transactions SumUp sont récupérées automatiquement 
               et déclenchent le système de bourse dans Beer Exchange.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Import CSV SumUp */}
+      {authStatus?.authenticated && (
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 mt-6 border border-white/20">
+          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <Upload className="w-6 h-6" />
+            Import CSV SumUp
+          </h3>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2 text-white">
+                Fichier CSV SumUp
+              </label>
+              <input
+                id="csvFileInput"
+                type="file"
+                accept=".csv"
+                onChange={handleCsvFileChange}
+                className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-beer-gold file:text-purple-900 hover:file:bg-yellow-400"
+              />
+              {csvFile && (
+                <p className="text-sm text-green-400 mt-2">
+                  ✅ Fichier sélectionné: {csvFile.name}
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={importCsvProducts}
+                disabled={!csvFile || csvImporting}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
+              >
+                {csvImporting ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4" />
+                )}
+                {csvImporting ? 'Import en cours...' : 'Importer les produits'}
+              </button>
+              
+              <button
+                onClick={() => {
+                  setCsvFile(null);
+                  const fileInput = document.getElementById('csvFileInput');
+                  if (fileInput) fileInput.value = '';
+                }}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 p-3 bg-blue-500/20 border border-blue-500/30 rounded-lg">
+            <p className="text-blue-300 text-sm">
+              <strong>📁 Import CSV :</strong> Importez vos produits SumUp depuis un fichier CSV exporté. 
+              Le système détectera automatiquement les variations (25cl, 50cl, etc.) et créera les produits correspondants.
             </p>
           </div>
         </div>
