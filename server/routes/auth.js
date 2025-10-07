@@ -24,6 +24,7 @@ router.post('/login', loginValidation, async (req, res) => {
     }
 
     const { username, password } = req.body;
+    console.log('🔐 Tentative de connexion pour:', username);
 
     // Rechercher l'utilisateur
     const user = await User.findOne({ 
@@ -32,14 +33,21 @@ router.post('/login', loginValidation, async (req, res) => {
         is_active: true 
       } 
     });
+    
+    console.log('👤 Utilisateur trouvé:', user ? `${user.username} (${user.role})` : 'Aucun');
+    
     if (!user) {
+      console.log('❌ Utilisateur non trouvé ou inactif');
       return res.status(401).json({ message: 'Identifiants invalides' });
     }
 
     // Vérifier le mot de passe
     const bcrypt = require('bcryptjs');
     const isPasswordValid = await bcrypt.compare(password, user.password);
+    console.log('🔑 Mot de passe valide:', isPasswordValid);
+    
     if (!isPasswordValid) {
+      console.log('❌ Mot de passe incorrect');
       return res.status(401).json({ message: 'Identifiants invalides' });
     }
 
