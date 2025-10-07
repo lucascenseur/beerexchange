@@ -107,17 +107,16 @@ router.post('/:id/sell', async (req, res) => {
       return res.status(400).json({ message: 'Produit inactif' });
     }
     
-    if (product.stock < quantity) {
-      return res.status(400).json({ message: 'Stock insuffisant' });
-    }
+    console.log(`🛒 Vente de ${quantity}x ${product.name} (mode soirée - sans stock)`);
     
-    console.log(`🛒 Vente de ${quantity}x ${product.name} (stock: ${product.stock})`);
-    
-    // Enregistrer la vente
+    // Enregistrer la vente (seulement le nombre de ventes, pas le stock)
     await product.update({
-      stock: product.stock - quantity,
       salesCount: product.salesCount + quantity
     });
+    
+    // Notifier le moteur de prix pour influencer le marché
+    const priceEngine = require('../utils/priceEngine');
+    priceEngine.notifySale(product.id, quantity);
     
     // Émettre l'événement Socket.io pour mise à jour temps réel
     const io = req.app.get('io');
@@ -137,7 +136,6 @@ router.post('/:id/sell', async (req, res) => {
         description: product.description,
         category: product.category,
         currentPrice: parseFloat(product.currentPrice),
-        stock: product.stock,
         salesCount: product.salesCount,
         image: product.image
       }

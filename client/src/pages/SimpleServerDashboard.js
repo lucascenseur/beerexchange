@@ -24,8 +24,6 @@ const SimpleServerDashboard = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [stats, setStats] = useState({
     totalProducts: 0,
-    totalStock: 0,
-    lowStockCount: 0,
     totalSales: 0
   });
 
@@ -41,11 +39,9 @@ const SimpleServerDashboard = () => {
       
       // Calculer les statistiques
       const totalProducts = response.data.products.length;
-      const totalStock = response.data.products.reduce((sum, product) => sum + (product.stock || 0), 0);
-      const lowStockCount = response.data.products.filter(product => (product.stock || 0) < 10).length;
       const totalSales = response.data.products.reduce((sum, product) => sum + (product.salesCount || 0), 0);
       
-      setStats({ totalProducts, totalStock, lowStockCount, totalSales });
+      setStats({ totalProducts, totalSales });
     } catch (error) {
       console.error('Erreur récupération produits:', error);
       toast.error('Erreur lors du chargement des produits');
@@ -122,12 +118,12 @@ const SimpleServerDashboard = () => {
         // Mettre à jour l'état local avec les données du serveur
         setProducts(prev => prev.map(p => 
           p.id === productId 
-            ? { ...p, stock: response.data.product.stock, salesCount: (p.salesCount || 0) + quantity }
+            ? { ...p, salesCount: response.data.product.salesCount }
             : p
         ));
         setFilteredProducts(prev => prev.map(p => 
           p.id === productId 
-            ? { ...p, stock: response.data.product.stock, salesCount: (p.salesCount || 0) + quantity }
+            ? { ...p, salesCount: response.data.product.salesCount }
             : p
         ));
 
@@ -186,26 +182,16 @@ const SimpleServerDashboard = () => {
       </div>
 
       {/* Statistiques */}
-      <div className="grid grid-cols-4 gap-4 mb-4">
+      <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 text-center">
           <Package className="w-6 h-6 text-beer-gold mx-auto mb-1" />
           <p className="text-lg font-bold text-white">{stats.totalProducts}</p>
           <p className="text-white/70 text-sm">Produits</p>
         </div>
         <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 text-center">
-          <Beer className="w-6 h-6 text-green-400 mx-auto mb-1" />
-          <p className="text-lg font-bold text-white">{stats.totalStock}</p>
-          <p className="text-white/70 text-sm">Stock total</p>
-        </div>
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 text-center">
           <TrendingUp className="w-6 h-6 text-blue-400 mx-auto mb-1" />
           <p className="text-lg font-bold text-white">{stats.totalSales}</p>
           <p className="text-white/70 text-sm">Ventes</p>
-        </div>
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 text-center">
-          <Clock className="w-6 h-6 text-orange-400 mx-auto mb-1" />
-          <p className="text-lg font-bold text-white">{stats.lowStockCount}</p>
-          <p className="text-white/70 text-sm">Stock faible</p>
         </div>
       </div>
 
@@ -254,9 +240,6 @@ const SimpleServerDashboard = () => {
                     <p className="text-white/70 text-sm">{product.description}</p>
                     <div className="flex items-center space-x-4 mt-2">
                       <span className="text-beer-gold font-bold">{product.currentPrice}€</span>
-                      <span className={`text-sm ${product.stock < 10 ? 'text-red-400' : 'text-white/70'}`}>
-                        Stock: {product.stock}
-                      </span>
                       <span className="text-white/70 text-sm">
                         Ventes: {product.salesCount || 0}
                       </span>
@@ -266,19 +249,16 @@ const SimpleServerDashboard = () => {
                   <div className="flex space-x-2">
                     <button
                       onClick={() => handleSale(product.id, 1)}
-                      disabled={product.stock <= 0}
-                      className="px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
+                      className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-colors"
                     >
                       Vendre 1
                     </button>
-                    {product.stock >= 2 && (
-                      <button
-                        onClick={() => handleSale(product.id, 2)}
-                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
-                      >
-                        Vendre 2
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleSale(product.id, 2)}
+                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+                    >
+                      Vendre 2
+                    </button>
                   </div>
                 </div>
               </motion.div>
