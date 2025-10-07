@@ -130,8 +130,13 @@ fi
 print_status "Initialisation de la base de données..."
 cd server
 node scripts/initMariaDB.js all
-cd ..
 print_success "Base de données initialisée"
+
+# 8.1. Initialisation des produits de la soirée
+print_status "Initialisation des produits de la soirée..."
+node scripts/quickInit.js
+print_success "Produits de la soirée initialisés"
+cd ..
 
 # 9. Configuration du firewall
 print_status "Configuration du firewall..."

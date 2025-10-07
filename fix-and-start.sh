@@ -96,8 +96,13 @@ print_success "Processus arrêtés"
 print_status "Initialisation de la base de données..."
 cd server
 node scripts/initMariaDB.js all
-cd ..
 print_success "Base de données initialisée"
+
+# 6.1. Initialiser les produits de la soirée
+print_status "Initialisation des produits de la soirée..."
+node scripts/quickInit.js
+print_success "Produits de la soirée initialisés"
+cd ..
 
 # 7. Créer un fichier .env pour le client si nécessaire
 print_status "Configuration du client..."

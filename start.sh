@@ -49,6 +49,8 @@ fi
 echo "🗄️  Initialisation de la base de données..."
 cd server
 node scripts/initMariaDB.js all
+echo "🍺 Initialisation des produits de la soirée..."
+node scripts/quickInit.js
 cd ..
 
 echo ""
