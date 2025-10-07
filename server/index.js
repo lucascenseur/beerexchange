@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
+const path = require('path');
 const { sequelize, testConnection } = require('./config/database');
 require('dotenv').config();
 
@@ -66,6 +67,21 @@ app.use('/api/admin', adminRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Beer Exchange API is running!' });
 });
+
+// Servir les fichiers statiques du frontend en production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../client/build')));
+  
+  // Gérer le routage côté client pour React Router
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build/index.html'));
+  });
+} else {
+  // En développement, rediriger vers le serveur de développement React
+  app.get('*', (req, res) => {
+    res.redirect('http://localhost:3001' + req.originalUrl);
+  });
+}
 
 // Gestion des erreurs
 app.use((err, req, res, next) => {
