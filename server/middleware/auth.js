@@ -12,9 +12,11 @@ const authenticateToken = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
+    const user = await User.findByPk(decoded.userId, {
+      attributes: { exclude: ['password'] }
+    });
     
-    if (!user || !user.isActive) {
+    if (!user || !user.is_active) {
       return res.status(401).json({ message: 'Utilisateur invalide ou inactif' });
     }
 

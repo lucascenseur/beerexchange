@@ -26,25 +26,30 @@ router.post('/login', loginValidation, async (req, res) => {
     const { username, password } = req.body;
 
     // Rechercher l'utilisateur
-    const user = await User.findOne({ username, isActive: true });
+    const user = await User.findOne({ 
+      where: { 
+        username, 
+        is_active: true 
+      } 
+    });
     if (!user) {
       return res.status(401).json({ message: 'Identifiants invalides' });
     }
 
     // Vérifier le mot de passe
-    const isPasswordValid = await user.comparePassword(password);
+    const bcrypt = require('bcryptjs');
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Identifiants invalides' });
     }
 
     // Mettre à jour la dernière connexion
-    user.lastLogin = new Date();
-    await user.save();
+    await user.update({ last_login: new Date() });
 
     // Générer le token JWT
     const token = jwt.sign(
       { 
-        userId: user._id, 
+        userId: user.id, 
         username: user.username, 
         role: user.role 
       },
@@ -55,7 +60,13 @@ router.post('/login', loginValidation, async (req, res) => {
     res.json({
       message: 'Connexion réussie',
       token,
-      user: user.toPublicJSON()
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        is_active: user.is_active,
+        last_login: user.last_login
+      }
     });
 
   } catch (error) {
@@ -68,7 +79,13 @@ router.post('/login', loginValidation, async (req, res) => {
 router.get('/me', authenticateToken, async (req, res) => {
   try {
     res.json({
-      user: req.user.toPublicJSON()
+      user: {
+        id: req.user.id,
+        username: req.user.username,
+        role: req.user.role,
+        is_active: req.user.is_active,
+        last_login: req.user.last_login
+      }
     });
   } catch (error) {
     console.error('Erreur récupération utilisateur:', error);
@@ -85,7 +102,13 @@ router.post('/logout', authenticateToken, (req, res) => {
 router.get('/verify', authenticateToken, (req, res) => {
   res.json({ 
     valid: true, 
-    user: req.user.toPublicJSON() 
+    user: {
+      id: req.user.id,
+      username: req.user.username,
+      role: req.user.role,
+      is_active: req.user.is_active,
+      last_login: req.user.last_login
+    }
   });
 });
 
@@ -105,17 +128,18 @@ router.post('/change-password', [
     }
 
     const { currentPassword, newPassword } = req.body;
-    const user = await User.findById(req.user._id);
+    const user = await User.findByPk(req.user.id);
 
     // Vérifier le mot de passe actuel
-    const isCurrentPasswordValid = await user.comparePassword(currentPassword);
+    const bcrypt = require('bcryptjs');
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
     if (!isCurrentPasswordValid) {
       return res.status(400).json({ message: 'Mot de passe actuel incorrect' });
     }
 
     // Mettre à jour le mot de passe
-    user.password = newPassword;
-    await user.save();
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await user.update({ password: hashedPassword });
 
     res.json({ message: 'Mot de passe modifié avec succès' });
 

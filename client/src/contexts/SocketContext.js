@@ -75,6 +75,7 @@ export const SocketProvider = ({ children }) => {
       socket.on('product-updated', callback);
       return () => socket.off('product-updated', callback);
     }
+    return () => {}; // Retourner une fonction vide si pas de socket
   };
 
   // Fonction pour écouter la création de produits
@@ -83,6 +84,7 @@ export const SocketProvider = ({ children }) => {
       socket.on('product-created', callback);
       return () => socket.off('product-created', callback);
     }
+    return () => {}; // Retourner une fonction vide si pas de socket
   };
 
   // Fonction pour écouter la suppression de produits
@@ -91,6 +93,7 @@ export const SocketProvider = ({ children }) => {
       socket.on('product-deleted', callback);
       return () => socket.off('product-deleted', callback);
     }
+    return () => {}; // Retourner une fonction vide si pas de socket
   };
 
   // Fonction pour écouter les nouvelles ventes
@@ -99,6 +102,7 @@ export const SocketProvider = ({ children }) => {
       socket.on('sale-created', callback);
       return () => socket.off('sale-created', callback);
     }
+    return () => {}; // Retourner une fonction vide si pas de socket
   };
 
   // Fonction pour émettre un événement
