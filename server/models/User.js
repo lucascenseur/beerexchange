@@ -1,63 +1,67 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
 const bcrypt = require('bcryptjs');
+const { sequelize } = require('../config/database');
 
-const userSchema = new mongoose.Schema({
+const User = sequelize.define('User', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
   username: {
-    type: String,
-    required: true,
+    type: DataTypes.STRING(30),
+    allowNull: false,
     unique: true,
-    trim: true,
-    minlength: 3,
-    maxlength: 30
+    validate: {
+      len: [3, 30]
+    }
   },
   password: {
-    type: String,
-    required: true,
-    minlength: 6
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      len: [6, 255]
+    }
   },
   role: {
-    type: String,
-    enum: ['admin', 'server'],
-    required: true
+    type: DataTypes.ENUM('admin', 'server'),
+    allowNull: false
   },
   isActive: {
-    type: Boolean,
-    default: true
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    field: 'is_active'
   },
   lastLogin: {
-    type: Date,
-    default: null
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'last_login'
   }
 }, {
-  timestamps: true
-});
-
-// Hash du mot de passe avant sauvegarde
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
-  try {
-    const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
+  tableName: 'users',
+  hooks: {
+    beforeSave: async (user) => {
+      if (user.changed('password')) {
+        const salt = await bcrypt.genSalt(12);
+        user.password = await bcrypt.hash(user.password, salt);
+      }
+    }
   }
 });
 
 // Méthode pour comparer les mots de passe
-userSchema.methods.comparePassword = async function(candidatePassword) {
+User.prototype.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
 // Méthode pour obtenir les données publiques de l'utilisateur
-userSchema.methods.toPublicJSON = function() {
+User.prototype.toPublicJSON = function() {
   return {
-    id: this._id,
+    id: this.id,
     username: this.username,
     role: this.role,
     lastLogin: this.lastLogin
   };
 };
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = User;

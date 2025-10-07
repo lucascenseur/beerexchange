@@ -48,7 +48,7 @@ fi
 # Initialiser la base de données si nécessaire
 echo "🗄️  Initialisation de la base de données..."
 cd server
-node scripts/initUsers.js all
+node scripts/initMariaDB.js all
 cd ..
 
 echo ""

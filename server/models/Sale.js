@@ -1,94 +1,88 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const saleSchema = new mongoose.Schema({
-  product: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product',
-    required: true
+const Sale = sequelize.define('Sale', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  productId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    field: 'product_id',
+    references: {
+      model: 'products',
+      key: 'id'
+    }
   },
   productName: {
-    type: String,
-    required: true
+    type: DataTypes.STRING(100),
+    allowNull: false,
+    field: 'product_name'
   },
   price: {
-    type: Number,
-    required: true,
-    min: 0
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false
   },
   quantity: {
-    type: Number,
-    required: true,
-    min: 1,
-    default: 1
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1
   },
   totalAmount: {
-    type: Number,
-    required: true,
-    min: 0
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false,
+    field: 'total_amount'
   },
-  server: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+  serverId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    field: 'server_id',
+    references: {
+      model: 'users',
+      key: 'id'
+    }
   },
   serverName: {
-    type: String,
-    required: true
-  },
-  timestamp: {
-    type: Date,
-    default: Date.now
+    type: DataTypes.STRING(30),
+    allowNull: false,
+    field: 'server_name'
   },
   notes: {
-    type: String,
-    trim: true,
-    maxlength: 200
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
-  timestamps: true
+  tableName: 'sales'
 });
 
-// Index pour les requêtes fréquentes
-saleSchema.index({ timestamp: -1 });
-saleSchema.index({ product: 1, timestamp: -1 });
-saleSchema.index({ server: 1, timestamp: -1 });
-
 // Méthode statique pour obtenir les statistiques
-saleSchema.statics.getStats = async function(startDate, endDate) {
-  const matchStage = {};
+Sale.getStats = async function(startDate, endDate) {
+  const whereClause = {};
   
   if (startDate || endDate) {
-    matchStage.timestamp = {};
-    if (startDate) matchStage.timestamp.$gte = new Date(startDate);
-    if (endDate) matchStage.timestamp.$lte = new Date(endDate);
+    whereClause.createdAt = {};
+    if (startDate) whereClause.createdAt[sequelize.Op.gte] = new Date(startDate);
+    if (endDate) whereClause.createdAt[sequelize.Op.lte] = new Date(endDate);
   }
   
-  const stats = await this.aggregate([
-    { $match: matchStage },
-    {
-      $group: {
-        _id: null,
-        totalSales: { $sum: '$quantity' },
-        totalRevenue: { $sum: '$totalAmount' },
-        averagePrice: { $avg: '$price' },
-        uniqueProducts: { $addToSet: '$product' },
-        uniqueServers: { $addToSet: '$server' }
-      }
-    },
-    {
-      $project: {
-        _id: 0,
-        totalSales: 1,
-        totalRevenue: { $round: ['$totalRevenue', 2] },
-        averagePrice: { $round: ['$averagePrice', 2] },
-        uniqueProductsCount: { $size: '$uniqueProducts' },
-        uniqueServersCount: { $size: '$uniqueServers' }
-      }
-    }
-  ]);
+  const stats = await Sale.findAll({
+    where: whereClause,
+    attributes: [
+      [sequelize.fn('COUNT', sequelize.col('id')), 'totalSales'],
+      [sequelize.fn('SUM', sequelize.col('quantity')), 'totalQuantity'],
+      [sequelize.fn('SUM', sequelize.col('total_amount')), 'totalRevenue'],
+      [sequelize.fn('AVG', sequelize.col('price')), 'averagePrice'],
+      [sequelize.fn('COUNT', sequelize.fn('DISTINCT', sequelize.col('product_id'))), 'uniqueProductsCount'],
+      [sequelize.fn('COUNT', sequelize.fn('DISTINCT', sequelize.col('server_id'))), 'uniqueServersCount']
+    ],
+    raw: true
+  });
   
   return stats[0] || {
     totalSales: 0,
+    totalQuantity: 0,
     totalRevenue: 0,
     averagePrice: 0,
     uniqueProductsCount: 0,
@@ -97,37 +91,28 @@ saleSchema.statics.getStats = async function(startDate, endDate) {
 };
 
 // Méthode statique pour obtenir les ventes par produit
-saleSchema.statics.getSalesByProduct = async function(startDate, endDate) {
-  const matchStage = {};
+Sale.getSalesByProduct = async function(startDate, endDate) {
+  const whereClause = {};
   
   if (startDate || endDate) {
-    matchStage.timestamp = {};
-    if (startDate) matchStage.timestamp.$gte = new Date(startDate);
-    if (endDate) matchStage.timestamp.$lte = new Date(endDate);
+    whereClause.createdAt = {};
+    if (startDate) whereClause.createdAt[sequelize.Op.gte] = new Date(startDate);
+    if (endDate) whereClause.createdAt[sequelize.Op.lte] = new Date(endDate);
   }
   
-  return await this.aggregate([
-    { $match: matchStage },
-    {
-      $group: {
-        _id: '$product',
-        productName: { $first: '$productName' },
-        totalSales: { $sum: '$quantity' },
-        totalRevenue: { $sum: '$totalAmount' },
-        averagePrice: { $avg: '$price' }
-      }
-    },
-    {
-      $project: {
-        _id: 1,
-        productName: 1,
-        totalSales: 1,
-        totalRevenue: { $round: ['$totalRevenue', 2] },
-        averagePrice: { $round: ['$averagePrice', 2] }
-      }
-    },
-    { $sort: { totalSales: -1 } }
-  ]);
+  return await Sale.findAll({
+    where: whereClause,
+    attributes: [
+      'productId',
+      'productName',
+      [sequelize.fn('SUM', sequelize.col('quantity')), 'totalSales'],
+      [sequelize.fn('SUM', sequelize.col('total_amount')), 'totalRevenue'],
+      [sequelize.fn('AVG', sequelize.col('price')), 'averagePrice']
+    ],
+    group: ['productId', 'productName'],
+    order: [[sequelize.literal('totalSales'), 'DESC']],
+    raw: true
+  });
 };
 
-module.exports = mongoose.model('Sale', saleSchema);
+module.exports = Sale;

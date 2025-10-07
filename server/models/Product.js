@@ -1,90 +1,81 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const productSchema = new mongoose.Schema({
+const Product = sequelize.define('Product', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
   name: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 100
+    type: DataTypes.STRING(100),
+    allowNull: false
   },
   description: {
-    type: String,
-    trim: true,
-    maxlength: 500
+    type: DataTypes.TEXT,
+    allowNull: true
   },
   category: {
-    type: String,
-    enum: ['beer', 'cocktail', 'soft', 'snack', 'other'],
-    default: 'beer'
+    type: DataTypes.ENUM('beer', 'cocktail', 'soft', 'snack', 'other'),
+    defaultValue: 'beer'
   },
   basePrice: {
-    type: Number,
-    required: true,
-    min: 0
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false,
+    field: 'base_price'
   },
   currentPrice: {
-    type: Number,
-    required: true,
-    min: 0
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false,
+    field: 'current_price'
   },
   stock: {
-    type: Number,
-    required: true,
-    min: 0,
-    default: 0
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
   },
   initialStock: {
-    type: Number,
-    required: true,
-    min: 0,
-    default: 0
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+    field: 'initial_stock'
   },
   salesCount: {
-    type: Number,
-    default: 0
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    field: 'sales_count'
   },
-  priceHistory: [{
-    price: Number,
-    timestamp: {
-      type: Date,
-      default: Date.now
-    },
-    salesCount: Number
-  }],
   isActive: {
-    type: Boolean,
-    default: true
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    field: 'is_active'
   },
   image: {
-    type: String,
-    default: null
+    type: DataTypes.STRING,
+    allowNull: true
   },
-  // Paramètres pour l'algorithme de prix
   priceMultiplier: {
-    type: Number,
-    default: 1.0,
-    min: 0.1,
-    max: 5.0
+    type: DataTypes.DECIMAL(3, 1),
+    defaultValue: 1.0,
+    field: 'price_multiplier'
   },
   demandFactor: {
-    type: Number,
-    default: 1.0,
-    min: 0.1,
-    max: 3.0
+    type: DataTypes.DECIMAL(3, 1),
+    defaultValue: 1.0,
+    field: 'demand_factor'
   }
 }, {
-  timestamps: true
+  tableName: 'products'
 });
 
 // Méthode pour calculer le nouveau prix basé sur les ventes
-productSchema.methods.calculateNewPrice = function() {
-  const basePrice = this.basePrice;
+Product.prototype.calculateNewPrice = function() {
+  const basePrice = parseFloat(this.basePrice);
   const salesCount = this.salesCount;
-  const demandFactor = this.demandFactor;
-  const priceMultiplier = this.priceMultiplier;
+  const demandFactor = parseFloat(this.demandFactor);
+  const priceMultiplier = parseFloat(this.priceMultiplier);
   
   // Algorithme simple : prix augmente avec les ventes
-  // Plus il y a de ventes, plus le prix augmente
   const salesImpact = Math.min(salesCount * 0.1, 2.0); // Max 200% d'augmentation
   const newPrice = basePrice * (1 + salesImpact * demandFactor) * priceMultiplier;
   
@@ -93,7 +84,7 @@ productSchema.methods.calculateNewPrice = function() {
 };
 
 // Méthode pour enregistrer une vente
-productSchema.methods.recordSale = function() {
+Product.prototype.recordSale = async function() {
   if (this.stock > 0) {
     this.stock -= 1;
     this.salesCount += 1;
@@ -102,48 +93,62 @@ productSchema.methods.recordSale = function() {
     const newPrice = this.calculateNewPrice();
     this.currentPrice = newPrice;
     
-    // Ajouter à l'historique des prix
-    this.priceHistory.push({
+    await this.save();
+    
+    // Enregistrer dans l'historique des prix
+    await PriceHistory.create({
+      productId: this.id,
       price: newPrice,
-      timestamp: new Date(),
       salesCount: this.salesCount
     });
     
-    // Garder seulement les 50 derniers enregistrements
-    if (this.priceHistory.length > 50) {
-      this.priceHistory = this.priceHistory.slice(-50);
-    }
-    
-    return this.save();
+    return this;
   }
   throw new Error('Stock insuffisant');
 };
 
 // Méthode pour obtenir la variation de prix
-productSchema.methods.getPriceVariation = function() {
-  if (this.priceHistory.length < 2) return 0;
+Product.prototype.getPriceVariation = async function() {
+  const latestHistory = await PriceHistory.findOne({
+    where: { productId: this.id },
+    order: [['createdAt', 'DESC']],
+    limit: 2
+  });
   
-  const currentPrice = this.currentPrice;
-  const previousPrice = this.priceHistory[this.priceHistory.length - 2].price;
+  if (!latestHistory) return 0;
+  
+  const currentPrice = parseFloat(this.currentPrice);
+  const previousPrice = parseFloat(latestHistory.price);
   
   return ((currentPrice - previousPrice) / previousPrice) * 100;
 };
 
 // Méthode pour obtenir les données publiques
-productSchema.methods.toPublicJSON = function() {
+Product.prototype.toPublicJSON = async function() {
+  const priceVariation = await this.getPriceVariation();
+  const priceHistory = await PriceHistory.findAll({
+    where: { productId: this.id },
+    order: [['createdAt', 'DESC']],
+    limit: 20
+  });
+  
   return {
-    id: this._id,
+    id: this.id,
     name: this.name,
     description: this.description,
     category: this.category,
-    currentPrice: this.currentPrice,
+    currentPrice: parseFloat(this.currentPrice),
     stock: this.stock,
     salesCount: this.salesCount,
-    priceVariation: this.getPriceVariation(),
-    priceHistory: this.priceHistory.slice(-20), // 20 derniers points
+    priceVariation: Math.round(priceVariation * 100) / 100,
+    priceHistory: priceHistory.map(h => ({
+      price: parseFloat(h.price),
+      timestamp: h.createdAt,
+      salesCount: h.salesCount
+    })),
     isActive: this.isActive,
     image: this.image
   };
 };
 
-module.exports = mongoose.model('Product', productSchema);
+module.exports = Product;
