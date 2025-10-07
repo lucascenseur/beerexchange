@@ -65,28 +65,15 @@ class PriceEngine {
         productsByName[product.name].push(product);
       });
 
-      for (const product of products) {
-        // Exclure l'écocup des mises à jour de prix (prix fixe)
-        if (product.name && product.name.toLowerCase().includes('écocup')) {
-          console.log(`🔒 Prix fixe maintenu pour: ${product.name}`);
-          continue;
-        }
-        
-        // Vérifier si ce produit est du même type que celui vendu (même nom de base)
-        const getBaseProductName = (name) => {
-          // Extraire le nom de base en supprimant les tailles et formats
-          return name
-            .replace(/\s*\(?\d+cl\)?/gi, '') // Supprimer 25cl, 50cl, etc.
-            .replace(/\s*\(?(verre|bouteille|canette)\)?/gi, '') // Supprimer verre, bouteille, canette
-            .replace(/\s*\(?\d+ml\)?/gi, '') // Supprimer 250ml, 500ml, etc.
-            .trim();
-        };
-        
-        const soldProductBaseName = getBaseProductName(soldProduct?.name || '');
-        const productBaseName = getBaseProductName(product.name);
-        const isSameProductType = productBaseName === soldProductBaseName && productBaseName !== '';
-        
-        const newPrice = this.calculateNewPriceAfterSale(product, marketTrend, soldProductId, quantity, isSameProductType);
+      // Filtrer les produits (exclure l'écocup qui n'influence rien)
+      const productsToUpdate = products.filter(product => 
+        !(product.name && product.name.toLowerCase().includes('écocup'))
+      );
+      
+      console.log(`📊 ${productsToUpdate.length} produits à mettre à jour (écocup exclu)`);
+
+      for (const product of productsToUpdate) {
+        const newPrice = this.calculateNewPriceAfterSale(product, marketTrend, soldProductId, quantity, false);
         
         if (newPrice !== product.currentPrice) {
           // Sauvegarder l'historique des prix
@@ -104,6 +91,12 @@ class PriceEngine {
             io.emit('product-updated', product);
           }
         }
+      }
+      
+      // L'écocup garde son prix fixe (pas de mise à jour)
+      const ecocupProduct = products.find(p => p.name && p.name.toLowerCase().includes('écocup'));
+      if (ecocupProduct) {
+        console.log(`🔒 Écocup maintenu à prix fixe: ${ecocupProduct.currentPrice}€`);
       }
 
       // Réduire l'activité du marché avec le temps
@@ -173,7 +166,7 @@ class PriceEngine {
     const currentPrice = parseFloat(product.currentPrice);
     const basePrice = parseFloat(product.basePrice);
     
-    // L'écocup garde toujours son prix de base (prix fixe)
+    // L'écocup garde toujours son prix de base (prix fixe) et n'influence rien
     if (product.name && product.name.toLowerCase().includes('écocup')) {
       console.log(`🔒 Prix fixe maintenu pour: ${product.name} (${basePrice}€)`);
       return basePrice;
@@ -182,23 +175,20 @@ class PriceEngine {
     let newPrice = currentPrice;
     
     if (product.id === soldProductId) {
-      // Le produit vendu gagne 5 centimes par quantité vendue (système plus agressif)
-      newPrice = currentPrice + (quantity * 0.05);
-      console.log(`📈 ${product.name}: +${quantity * 0.05}€ (${currentPrice}€ → ${newPrice}€)`);
-    } else if (isSameProductType) {
-      // Les produits du même type (même nom) gagnent aussi 3 centimes par quantité
-      newPrice = currentPrice + (quantity * 0.03);
-      console.log(`📈 ${product.name} (même type): +${quantity * 0.03}€ (${currentPrice}€ → ${newPrice}€)`);
+      // Le produit vendu augmente de 0,10 € (10 centimes)
+      newPrice = currentPrice + 0.10;
+      console.log(`📈 ${product.name}: +0.10€ (${currentPrice}€ → ${newPrice}€)`);
     } else {
-      // Les autres produits perdent 2 centimes (système plus agressif)
-      newPrice = currentPrice - 0.02;
-      console.log(`📉 ${product.name}: -0.02€ (${currentPrice}€ → ${newPrice}€)`);
+      // Les autres produits (hors écocup) baissent de 0,0038 € (0,38 centime)
+      // Calcul: 0,05 € répartis sur 13 produits = 0,05/13 ≈ 0,0038 €
+      newPrice = currentPrice - 0.0038;
+      console.log(`📉 ${product.name}: -0.0038€ (${currentPrice}€ → ${newPrice}€)`);
     }
     
-    // Limiter les variations (entre 30% et 300% du prix de base - seuils plus élevés)
-    newPrice = Math.max(basePrice * 0.3, Math.min(basePrice * 3.0, newPrice));
+    // Limiter les variations (entre 50% et 200% du prix de base)
+    newPrice = Math.max(basePrice * 0.5, Math.min(basePrice * 2.0, newPrice));
     
-    // S'assurer que le prix ne descend pas en dessous de 0.50€ (seuil plus élevé)
+    // S'assurer que le prix ne descend pas en dessous de 0.50€
     newPrice = Math.max(0.50, newPrice);
     
     return parseFloat(newPrice.toFixed(2));
