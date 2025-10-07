@@ -8,7 +8,7 @@ const BeerExchangeDisplay = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [tradingPeriod, setTradingPeriod] = useState(1);
+  const [tradingPeriod] = useState(1);
   const [priceChanges, setPriceChanges] = useState({});
 
   const { onProductUpdate, onProductCreated, onProductDeleted } = useSocket();

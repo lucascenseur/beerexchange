@@ -57,7 +57,7 @@ router.get('/', async (req, res) => {
 });
 
 // Route pour obtenir les statistiques globales
-router.get('/stats', authenticateToken, requireServerOrAdmin, async (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     
@@ -75,7 +75,7 @@ router.get('/stats', authenticateToken, requireServerOrAdmin, async (req, res) =
 });
 
 // Route pour obtenir les ventes d'aujourd'hui
-router.get('/today', authenticateToken, requireServerOrAdmin, async (req, res) => {
+router.get('/today', async (req, res) => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);

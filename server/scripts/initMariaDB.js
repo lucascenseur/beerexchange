@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Product = require('../models/Product');
 const PriceHistory = require('../models/PriceHistory');
 const Sale = require('../models/Sale');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 const initUsers = async () => {
@@ -16,7 +17,6 @@ const initUsers = async () => {
     console.log('🗑️  Tables recréées');
 
     // Créer l'utilisateur admin avec mot de passe hashé
-    const bcrypt = require('bcryptjs');
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
     const hashedAdminPassword = await bcrypt.hash(adminPassword, 12);
     
