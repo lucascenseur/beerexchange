@@ -5,6 +5,7 @@ import { useSocket } from '../contexts/SocketContext';
 import axios from 'axios';
 
 const PublicDisplayCompact = () => {
+  // Interface publique compacte pour écran fixe
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -13,7 +14,6 @@ const PublicDisplayCompact = () => {
     averagePrice: 0
   });
   const { onProductUpdate, onProductCreated, onProductDeleted } = useSocket();
-  const navigate = useNavigate();
 
   // Récupérer les produits
   const fetchProducts = async () => {
