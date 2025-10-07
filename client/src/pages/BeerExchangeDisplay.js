@@ -14,17 +14,22 @@ const BeerExchangeDisplay = () => {
 
   const { onProductUpdate, onProductCreated, onProductDeleted } = useSocket();
 
-  // Générer un historique de prix simulé pour l'effet visuel
+  // Générer un historique de prix simulé pour l'effet visuel (1 heure)
   const generatePriceHistory = (currentPrice, basePrice) => {
     const history = [];
-    const points = 8; // 8 points d'historique
+    const points = 12; // 12 points d'historique sur 1 heure
+    const intervalMinutes = 5; // 5 minutes entre chaque point
     
     for (let i = points; i >= 0; i--) {
-      const variation = (Math.random() - 0.5) * 0.3; // Variation de ±15%
-      const price = currentPrice * (1 + variation);
+      // Variation plus réaliste basée sur le temps
+      const timeFactor = i / points; // 0 = maintenant, 1 = il y a 1h
+      const baseVariation = (Math.random() - 0.5) * 0.2; // Variation de ±10%
+      const timeVariation = (Math.random() - 0.5) * 0.1 * timeFactor; // Plus de variation dans le passé
+      
+      const price = currentPrice * (1 + baseVariation + timeVariation);
       history.push({
         price: Math.max(0.1, price), // Prix minimum de 0.1€
-        time: new Date(Date.now() - i * 30000) // 30 secondes entre chaque point
+        time: new Date(Date.now() - i * intervalMinutes * 60000) // 5 minutes entre chaque point
       });
     }
     
@@ -42,7 +47,7 @@ const BeerExchangeDisplay = () => {
     const prices = history.map(h => h.price);
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
-    const priceRange = maxPrice - minPrice || 1;
+    const priceRange = maxPrice - minPrice || 0.01; // Éviter la division par 0
     
     const points = history.map((h, index) => {
       const x = padding + (index / (history.length - 1)) * (width - 2 * padding);
@@ -50,17 +55,29 @@ const BeerExchangeDisplay = () => {
       return `${x},${y}`;
     }).join(' ');
     
-    const color = trend === 'up' ? '#10B981' : trend === 'down' ? '#EF4444' : '#6B7280';
+    // Couleur basée sur la tendance générale du graphique
+    const firstPrice = history[0]?.price || 0;
+    const lastPrice = history[history.length - 1]?.price || 0;
+    const chartTrend = lastPrice > firstPrice ? 'up' : lastPrice < firstPrice ? 'down' : 'stable';
+    
+    const color = chartTrend === 'up' ? '#10B981' : chartTrend === 'down' ? '#EF4444' : '#6B7280';
     
     return (
-      <svg width={width} height={height} className="opacity-70">
+      <svg width={width} height={height} className="opacity-80">
         <polyline
           points={points}
           fill="none"
           stroke={color}
-          strokeWidth="1.5"
+          strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
+        />
+        {/* Point final pour marquer le prix actuel */}
+        <circle
+          cx={padding + (width - 2 * padding)}
+          cy={padding + ((maxPrice - lastPrice) / priceRange) * (height - 2 * padding)}
+          r="1.5"
+          fill={color}
         />
       </svg>
     );
@@ -73,6 +90,23 @@ const BeerExchangeDisplay = () => {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Mise à jour de l'historique des prix toutes les 30 secondes
+  useEffect(() => {
+    const historyTimer = setInterval(() => {
+      setPriceHistory(prev => {
+        const newHistory = {};
+        products.forEach(product => {
+          if (product && product.id) {
+            newHistory[product.id] = generatePriceHistory(product.currentPrice, product.basePrice || product.currentPrice);
+          }
+        });
+        return newHistory;
+      });
+    }, 30000); // Toutes les 30 secondes
+
+    return () => clearInterval(historyTimer);
+  }, [products]);
 
   // Récupérer les produits
   const fetchProducts = async () => {
@@ -301,10 +335,19 @@ const BeerExchangeDisplay = () => {
                 {/* Historique des prix */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <span className="text-slate-500 text-xs">24h:</span>
+                    <span className="text-slate-500 text-xs">1h:</span>
                     <span className={`text-xs font-medium ${getPriceColor(product.trend)}`}>
-                      {product.trend === 'up' ? '+' : product.trend === 'down' ? '-' : ''}
-                      {Math.abs(product.priceChange || 0).toFixed(2)}€
+                      {(() => {
+                        const history = priceHistory[product.id];
+                        if (!history || history.length < 2) return '0.00€';
+                        
+                        const currentPrice = product.currentPrice || 0;
+                        const hourAgoPrice = history[0]?.price || currentPrice;
+                        const change = currentPrice - hourAgoPrice;
+                        const sign = change > 0 ? '+' : change < 0 ? '-' : '';
+                        
+                        return `${sign}${Math.abs(change).toFixed(2)}€`;
+                      })()}
                     </span>
                   </div>
                   
@@ -363,10 +406,19 @@ const BeerExchangeDisplay = () => {
                 {/* Historique des prix */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <span className="text-slate-500 text-xs">24h:</span>
+                    <span className="text-slate-500 text-xs">1h:</span>
                     <span className={`text-xs font-medium ${getPriceColor(product.trend)}`}>
-                      {product.trend === 'up' ? '+' : product.trend === 'down' ? '-' : ''}
-                      {Math.abs(product.priceChange || 0).toFixed(2)}€
+                      {(() => {
+                        const history = priceHistory[product.id];
+                        if (!history || history.length < 2) return '0.00€';
+                        
+                        const currentPrice = product.currentPrice || 0;
+                        const hourAgoPrice = history[0]?.price || currentPrice;
+                        const change = currentPrice - hourAgoPrice;
+                        const sign = change > 0 ? '+' : change < 0 ? '-' : '';
+                        
+                        return `${sign}${Math.abs(change).toFixed(2)}€`;
+                      })()}
                     </span>
                   </div>
                   
