@@ -37,10 +37,30 @@ const MobileCashier = () => {
       const response = await axios.get('/api/products');
       console.log('📦 Réponse API produits:', response.data);
       
-      // La route /api/products retourne directement un tableau de produits
-      const productsData = response.data;
+      // Vérifier la structure de la réponse
+      let productsData = response.data;
       
-      console.log('📦 Données produits:', productsData);
+      // Si c'est un objet avec une propriété products, l'utiliser
+      if (response.data && typeof response.data === 'object' && response.data.products) {
+        productsData = response.data.products;
+      }
+      // Si c'est déjà un tableau, l'utiliser directement
+      else if (Array.isArray(response.data)) {
+        productsData = response.data;
+      }
+      // Sinon, essayer de convertir en tableau
+      else {
+        productsData = [];
+      }
+      
+      console.log('📦 Données produits (après traitement):', productsData);
+      console.log('📦 Type de données:', typeof productsData, 'Array?', Array.isArray(productsData));
+      
+      if (!Array.isArray(productsData)) {
+        console.error('❌ Les données ne sont pas un tableau:', productsData);
+        setProducts([]);
+        return;
+      }
       
       const activeProducts = productsData.filter(product => 
         product && product.isActive && product.currentPrice > 0
