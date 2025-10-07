@@ -14,19 +14,34 @@ const BeerExchangeDisplay = () => {
 
   const { onProductUpdate, onProductCreated, onProductDeleted } = useSocket();
 
-  // Générer un historique de prix simulé pour l'effet visuel (1 heure)
-  const generatePriceHistory = (currentPrice, basePrice) => {
+  // Récupérer l'historique réel des prix depuis l'API
+  const fetchPriceHistory = async (productId) => {
+    try {
+      const response = await axios.get(`/api/products/${productId}/price-history`);
+      return response.data.priceHistory || [];
+    } catch (error) {
+      console.error('Erreur récupération historique prix:', error);
+      return [];
+    }
+  };
+
+  // Générer un historique de prix basé sur les vraies données (1 heure)
+  const generatePriceHistory = (currentPrice, basePrice, salesCount = 0) => {
     const history = [];
     const points = 12; // 12 points d'historique sur 1 heure
     const intervalMinutes = 5; // 5 minutes entre chaque point
     
+    // Commencer avec le prix de base et évoluer vers le prix actuel
     for (let i = points; i >= 0; i--) {
-      // Variation plus réaliste basée sur le temps
       const timeFactor = i / points; // 0 = maintenant, 1 = il y a 1h
-      const baseVariation = (Math.random() - 0.5) * 0.2; // Variation de ±10%
-      const timeVariation = (Math.random() - 0.5) * 0.1 * timeFactor; // Plus de variation dans le passé
       
-      const price = currentPrice * (1 + baseVariation + timeVariation);
+      // Évolution basée sur les ventes réelles
+      const salesImpact = (salesCount / 20) * (1 - timeFactor); // Plus d'impact récent
+      const baseVariation = (Math.random() - 0.5) * 0.05; // Petite variation aléatoire
+      
+      // Prix qui évolue du prix de base vers le prix actuel
+      const price = basePrice + (currentPrice - basePrice) * (1 - timeFactor) + (basePrice * salesImpact) + (basePrice * baseVariation);
+      
       history.push({
         price: Math.max(0.1, price), // Prix minimum de 0.1€
         time: new Date(Date.now() - i * intervalMinutes * 60000) // 5 minutes entre chaque point
@@ -91,22 +106,7 @@ const BeerExchangeDisplay = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Mise à jour de l'historique des prix toutes les 30 secondes
-  useEffect(() => {
-    const historyTimer = setInterval(() => {
-      setPriceHistory(prev => {
-        const newHistory = {};
-        products.forEach(product => {
-          if (product && product.id) {
-            newHistory[product.id] = generatePriceHistory(product.currentPrice, product.basePrice || product.currentPrice);
-          }
-        });
-        return newHistory;
-      });
-    }, 30000); // Toutes les 30 secondes
-
-    return () => clearInterval(historyTimer);
-  }, [products]);
+  // L'historique se met à jour seulement quand les prix changent via Socket.io
 
   // Récupérer les produits
   const fetchProducts = async () => {
@@ -124,10 +124,14 @@ const BeerExchangeDisplay = () => {
       
       setProducts(productsWithChanges);
       
-      // Générer l'historique des prix pour chaque produit
+      // Générer l'historique des prix pour chaque produit basé sur les vraies ventes
       const historyData = {};
       productsWithChanges.forEach(product => {
-        historyData[product.id] = generatePriceHistory(product.currentPrice, product.basePrice || product.currentPrice);
+        historyData[product.id] = generatePriceHistory(
+          product.currentPrice, 
+          product.basePrice || product.currentPrice,
+          product.salesCount || 0
+        );
       });
       setPriceHistory(historyData);
     } catch (error) {
@@ -161,7 +165,7 @@ const BeerExchangeDisplay = () => {
           // Mettre à jour l'historique des prix
           setPriceHistory(prev => ({
             ...prev,
-            [product.id]: generatePriceHistory(newPrice, product.basePrice || newPrice)
+            [product.id]: generatePriceHistory(newPrice, product.basePrice || newPrice, updatedProduct.salesCount || 0)
           }));
 
           return {

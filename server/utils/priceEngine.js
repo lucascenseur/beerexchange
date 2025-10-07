@@ -14,12 +14,13 @@ class PriceEngine {
     if (this.isRunning) return;
     
     this.isRunning = true;
-    console.log('🚀 Moteur de prix démarré (mode soirée - sans stock)');
+    this.io = io;
+    console.log('🚀 Moteur de prix démarré (mode soirée - basé sur les ventes)');
     
-    // Mise à jour des prix toutes les 10 secondes pour plus de dynamisme
-    this.priceUpdateInterval = setInterval(async () => {
-      await this.updatePrices(io);
-    }, 10000);
+    // Pas de mise à jour automatique, seulement quand il y a des ventes
+    // this.priceUpdateInterval = setInterval(async () => {
+    //   await this.updatePrices(io);
+    // }, 10000);
   }
 
   // Arrêter le moteur de prix
@@ -33,12 +34,58 @@ class PriceEngine {
   }
 
   // Notifier une vente (influence le marché global)
-  notifySale(productId, quantity = 1) {
+  async notifySale(productId, quantity = 1) {
     this.marketActivity += quantity;
     console.log(`📈 Activité marché: +${quantity} (total: ${this.marketActivity})`);
+    
+    // Déclencher une mise à jour des prix basée sur cette vente
+    await this.updatePricesAfterSale(this.io, productId, quantity);
   }
 
-  // Mettre à jour les prix de tous les produits
+  // Mettre à jour les prix après une vente
+  async updatePricesAfterSale(io, soldProductId, quantity) {
+    try {
+      const products = await Product.findAll({
+        where: { isActive: true }
+      });
+
+      // Calculer l'activité du marché global
+      const totalSales = products.reduce((sum, product) => sum + (product.salesCount || 0), 0);
+      const marketTrend = this.calculateMarketTrend(totalSales);
+
+      console.log(`🔄 Mise à jour des prix après vente de ${quantity}x produit ${soldProductId}`);
+
+      for (const product of products) {
+        const newPrice = this.calculateNewPriceAfterSale(product, marketTrend, soldProductId, quantity);
+        
+        if (newPrice !== product.currentPrice) {
+          // Sauvegarder l'historique des prix
+          await PriceHistory.create({
+            productId: product.id,
+            price: newPrice,
+            salesCount: product.salesCount
+          });
+
+          // Mettre à jour le produit
+          await product.update({ currentPrice: newPrice });
+
+          // Émettre l'événement Socket.io
+          if (io) {
+            io.emit('product-updated', product);
+            console.log(`💰 Prix mis à jour: ${product.name} - ${product.currentPrice}€ → ${newPrice}€`);
+          }
+        }
+      }
+
+      // Réduire l'activité du marché avec le temps
+      this.marketActivity = Math.max(0, this.marketActivity * 0.9);
+      
+    } catch (error) {
+      console.error('❌ Erreur mise à jour prix après vente:', error);
+    }
+  }
+
+  // Mettre à jour les prix de tous les produits (ancienne fonction, désactivée)
   async updatePrices(io) {
     try {
       const products = await Product.findAll({
@@ -92,7 +139,34 @@ class PriceEngine {
     };
   }
 
-  // Calculer le nouveau prix d'un produit
+  // Calculer le nouveau prix d'un produit après une vente
+  calculateNewPriceAfterSale(product, marketTrend, soldProductId, quantity) {
+    const basePrice = parseFloat(product.basePrice);
+    const currentPrice = parseFloat(product.currentPrice);
+    const salesCount = product.salesCount || 0;
+    
+    // Facteur de demande basé sur les ventes du produit
+    const productDemand = 1 + (salesCount / 15); // Plus de ventes = prix plus élevé
+    
+    // Facteur de marché global (influence de toutes les ventes)
+    const marketInfluence = 1 + (marketTrend.trend * 0.2); // Jusqu'à 40% d'influence du marché
+    
+    // Si c'est le produit vendu, il a plus d'impact
+    const saleImpact = product.id === soldProductId ? 1 + (quantity * 0.1) : 1;
+    
+    // Variation plus petite et basée sur l'activité réelle
+    const activityVariation = (this.marketActivity / 50) * 0.1; // Basé sur l'activité réelle
+    
+    // Calcul du nouveau prix
+    let newPrice = basePrice * productDemand * marketInfluence * saleImpact * (1 + activityVariation);
+    
+    // Limiter les variations (entre 70% et 150% du prix de base)
+    newPrice = Math.max(basePrice * 0.7, Math.min(basePrice * 1.5, newPrice));
+    
+    return parseFloat(newPrice.toFixed(2));
+  }
+
+  // Calculer le nouveau prix d'un produit (ancienne fonction, désactivée)
   calculateNewPrice(product, marketTrend) {
     const basePrice = parseFloat(product.basePrice);
     const currentPrice = parseFloat(product.currentPrice);
