@@ -83,13 +83,14 @@ router.get('/callback', async (req, res) => {
 router.get('/status', async (req, res) => {
   try {
     const activeToken = await SumUpToken.getActiveToken();
+    const demoStatus = sumupService.getDemoStatus();
     
     if (!activeToken) {
       return res.json({
         authenticated: false,
         message: 'Aucune authentification SumUp active',
-        demo_mode: true,
-        demo_status: sumupService.getDemoStatus()
+        demoMode: demoStatus.isDemoMode,
+        demoMessage: demoStatus.message
       });
     }
 
@@ -104,17 +105,15 @@ router.get('/status', async (req, res) => {
       },
       expiresAt: new Date(activeToken.created_at.getTime() + (activeToken.expiresIn * 1000)),
       isExpired: isExpired,
-      demo_mode: true,
-      demo_status: sumupService.getDemoStatus()
+      demoMode: demoStatus.isDemoMode,
+      demoMessage: demoStatus.message
     });
 
   } catch (error) {
     console.error('❌ Erreur vérification statut SumUp:', error);
     res.status(500).json({
       success: false,
-      message: 'Erreur lors de la vérification du statut',
-      demo_mode: true,
-      demo_status: sumupService.getDemoStatus()
+      message: 'Erreur lors de la vérification du statut'
     });
   }
 });

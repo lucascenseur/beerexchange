@@ -22,13 +22,14 @@ class SumUpServiceSimple {
       state: state || crypto.randomBytes(16).toString('hex')
     });
 
-    return `${this.baseURL}/v0.1/authorize?${params.toString()}`;
+    // URL d'authentification SumUp correcte
+    return `https://api.sumup.com/authorize?${params.toString()}`;
   }
 
   // Échanger le code d'autorisation contre un token d'accès
   async exchangeCodeForToken(code) {
     try {
-      const response = await axios.post(`${this.baseURL}/v0.1/token`, {
+      const response = await axios.post(`https://api.sumup.com/token`, {
         grant_type: 'authorization_code',
         client_id: this.clientId,
         client_secret: this.clientSecret,
@@ -59,7 +60,7 @@ class SumUpServiceSimple {
     }
 
     try {
-      const response = await axios.post(`${this.baseURL}/v0.1/token`, {
+      const response = await axios.post(`https://api.sumup.com/token`, {
         grant_type: 'refresh_token',
         client_id: this.clientId,
         client_secret: this.clientSecret,
@@ -192,13 +193,11 @@ class SumUpServiceSimple {
       return response;
     } catch (error) {
       console.error('❌ Erreur lors de la récupération des infos marchand:', error.message);
-      console.log('🔄 Mode démo activé - Informations marchand simulées');
       // En cas d'erreur, retourner des infos simulées
       return {
-        id: 'demo-merchant-' + Date.now(),
+        id: 'demo-merchant',
         email: 'demo@beerexchange.com',
-        name: 'Beer Exchange Demo',
-        status: 'demo_mode'
+        name: 'Beer Exchange Demo'
       };
     }
   }
